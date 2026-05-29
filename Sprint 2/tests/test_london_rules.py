@@ -9,7 +9,7 @@ SPRINT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SPRINT_DIR))
 
 from controllers.game_controller import GameController
-from controllers.game_setup import GameSetup as ControllerGameSetup
+from controllers.game_setup import GameSetup
 from models.board import BoardMap
 from models.cards import ColouredCarCard, LocomotiveCard
 from models.core import CardColor
@@ -17,7 +17,6 @@ from models.decks import DestinationTicketDeck, FaceUpPool, TrainCarCardDeck
 from models.map_definition import MapDefinition
 from models.player import Player
 from models.scoring import StandardScoring
-from models.setup import GameSetup
 from models.tickets import DestinationTicket
 from models.turns import TurnManager
 
@@ -56,18 +55,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(0, counts[CardColor.WHITE])
 
     def test_setup_deals_two_transport_cards_and_two_starting_ticket_choices(self):
-        turn_manager, train_deck, ticket_deck, face_up_pool = GameSetup().set_up_game(
-            self.make_small_map(),
-            ["Alice", "Bob"]
-        )
-
-        for player in turn_manager.players:
-            self.assertEqual(2, len(player.train_cards))
-            self.assertEqual(0, len(player.destination_tickets))
-            self.assertEqual(2, len(player.starting_ticket_choices))
-
-    def test_controller_setup_uses_london_setup_rules(self):
-        turn_manager = ControllerGameSetup().set_up_game(
+        turn_manager = GameSetup().set_up_game(
             self.make_small_map(),
             ["Alice", "Bob"]
         )
@@ -89,21 +77,13 @@ class LondonRulesTest(unittest.TestCase):
                 ["Alice", "Bob", "Cara", "Dan", "Eli"]
             )
 
-        with self.assertRaises(ValueError):
-            ControllerGameSetup().set_up_game(map_definition, ["Alice"])
-
-        with self.assertRaises(ValueError):
-            ControllerGameSetup().set_up_game(
-                map_definition,
-                ["Alice", "Bob", "Cara", "Dan", "Eli"]
-            )
-
     def test_starting_ticket_choice_keeps_one_and_returns_one(self):
-        turn_manager, train_deck, ticket_deck, face_up_pool = GameSetup().set_up_game(
+        turn_manager = GameSetup().set_up_game(
             self.make_small_map(),
             ["Alice", "Bob"]
         )
 
+        ticket_deck = turn_manager.ticket_deck
         player = turn_manager.players[0]
         choices = player.starting_ticket_choices
         starting_deck_count = len(ticket_deck.tickets)

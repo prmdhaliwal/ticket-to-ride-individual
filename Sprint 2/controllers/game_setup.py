@@ -19,8 +19,8 @@ class GameSetup:
         players = self.create_players(player_names, map_def)
         
         # Build Decks
-        transport_deck = self._build_transport_deck()
-        ticket_deck = self._build_ticket_deck(map_def)
+        transport_deck = self.create_train_deck()
+        ticket_deck = self.create_ticket_deck(map_def)
         
         self.deal_starting_cards(players, transport_deck)
         self.deal_starting_tickets(players, ticket_deck)
@@ -65,7 +65,7 @@ class GameSetup:
             dealt = deck.draw_two()
             player.starting_ticket_choices = dealt
 
-    def _build_transport_deck(self):
+    def create_train_deck(self):
         """Creates the 44 cards for the London edition."""
         cards = []
         colors = [
@@ -86,7 +86,7 @@ class GameSetup:
 
         return TrainCarCardDeck(cards)
 
-    def _build_ticket_deck(self, map_def):
+    def create_ticket_deck(self, map_def):
         """Creates the tickets based on the map definition."""
         tickets = []
         for t_data in map_def.tickets:
