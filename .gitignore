@@ -4,4 +4,7 @@ __pycache__/
 
 build/
 dist/
+*.exe
+
 *.spec
+!/Sprint 3/TicketToRideLondon.spec

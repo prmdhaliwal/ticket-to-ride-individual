@@ -1,6 +1,6 @@
 # FIT3077 Ticket to Ride Prototype
 
-This repository contains the Sprint 2 Python/Tkinter prototype for Ticket to Ride: London.
+This repository contains the Sprint 3 Python/Tkinter prototype for Ticket to Ride: London.
 
 ## Target Platform
 
@@ -8,43 +8,41 @@ The executable is built for Windows.
 
 ## Run the Executable
 
-1. Open the project folder.
-2. Go to:
+Open PowerShell in the repository root, then run:
 
-   ```powershell
-   Sprint 2\dist
-   ```
+```powershell
+python -m pip install sv-ttk
+python "Sprint 3\main.py"
+```
 
-3. Run:
+The setup window opens first. Enter the player names, then start the game.
 
-   ```powershell
-   .\TicketToRideLondon.exe
-   ```
+## Build the Sprint 3 Executable
 
-The executable should run without an IDE. The required Python/Tkinter files are packaged into the executable.
+The Sprint 3 executable is built from the tracked PyInstaller spec file at `Sprint 3/TicketToRideLondon.spec`. This spec packages the game source, Tkinter UI code, theme files, and map assets.
 
-## Build the Executable
+Open PowerShell in the repository root, then run:
 
-Use these steps if you need to rebuild the executable from the source code.
+```powershell
+python -m pip install pyinstaller sv-ttk
+cd "Sprint 3"
+python -m PyInstaller TicketToRideLondon.spec --noconfirm
+```
 
-1. Open PowerShell in the repository root.
-2. Move into the Sprint 2 folder:
+After the build finishes, the executable is created at:
 
-   ```powershell
-   cd "Sprint 2"
-   ```
+```powershell
+Sprint 3\dist\TicketToRideLondon.exe
+```
 
-3. Build the executable:
+## Run the Sprint 3 Executable
 
-   ```powershell
-   python -m PyInstaller TicketToRideLondon.spec --noconfirm
-   ```
+From the repository root:
 
-4. After the build finishes, the executable will be created at:
-
-   ```powershell
-   Sprint 2\dist\TicketToRideLondon.exe
-   ```
+```powershell
+cd "Sprint 3\dist"
+.\TicketToRideLondon.exe
+```
 
 ## If the Build Command Fails
 
@@ -61,4 +59,4 @@ If PyInstaller is missing, install it with:
 python -m pip install pyinstaller
 ```
 
-Then run the build command again from the `Sprint 2` folder.
+Then run the Sprint 3 build command again.
