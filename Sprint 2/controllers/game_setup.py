@@ -6,6 +6,7 @@ from models.decks import TrainCarCardDeck, DestinationTicketDeck, FaceUpPool
 from models.cards import ColouredCarCard, LocomotiveCard
 from models.tickets import DestinationTicket
 from models.core import CardColor
+from models.route_claim_manager import RouteClaimManager
 from models.turns import TurnManager
 
 
@@ -28,8 +29,17 @@ class GameSetup:
         # Initialize the 5 face-up cards
         face_up_pool = FaceUpPool()
         face_up_pool.refresh(transport_deck)
+
+        route_claim_manager = RouteClaimManager()
         
-        return TurnManager(players, board, transport_deck, ticket_deck, face_up_pool)
+        return TurnManager(
+            players,
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool,
+            route_claim_manager
+        )
 
     def validate_player_count(self, map_def, player_names):
         player_count = len(player_names)

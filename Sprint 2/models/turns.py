@@ -2,9 +2,9 @@
 
 from models.decks import FaceUpPool
 from models.decks import TrainCarCardDeck
-from models.cards import TrainCar
 from models.core import CardColor
 from models.core import Subject
+from models.route_claim_manager import RouteClaimManager
 
 
 class EndGameTracker:
@@ -40,7 +40,7 @@ class EndGameTracker:
 
 class TurnManager(Subject):
     """Manages the active player and validates actions."""
-    def __init__(self, players, board, transport_deck, ticket_deck, face_up_pool):
+    def __init__(self, players, board, transport_deck, ticket_deck, face_up_pool, route_claim_manager=None):
         super().__init__()
         self.players = players
         self.board = board
@@ -50,6 +50,11 @@ class TurnManager(Subject):
         self.current_player_index = 0
         self.actions_taken = []
         self.end_game_tracker = EndGameTracker()
+
+        if route_claim_manager is None:
+            self.route_claim_manager = RouteClaimManager()
+        else:
+            self.route_claim_manager = route_claim_manager
 
     def get_current_player(self):
         return self.players[self.current_player_index]
@@ -97,35 +102,20 @@ class TurnManager(Subject):
         if self.actions_taken:
             return False, "Turn over or another action taken."
 
-        if route not in self.board.routes:
-            return False, "That route is not on the board."
+        ok, message = self.route_claim_manager.claim_route(
+            player,
+            route,
+            self.board,
+            self.transport_deck,
+            len(self.players)
+        )
 
-        if not route.is_available(len(self.players), player):
-            return False, "That route has already been claimed."
-
-        if player.trains_left < route.length:
-            return False, "Not enough bus pieces."
-
-        cards_to_use = player.choose_cards_for_route(route)
-        if len(cards_to_use) < route.length:
-            return False, "Not enough matching transportation cards."
-
-        player.remove_cards(cards_to_use)
-        self.transport_deck.discard_cards(cards_to_use)
-        player.place_trains(route.length)
-        player.move_score(route.points(self.board.route_scores))
-
-        route.claim(player)
-        route.placed_trains = []
-
-        # bus pieces now on the claimed route
-        for _ in range(route.length):
-            train = TrainCar(player, route)
-            route.placed_trains.append(train)
+        if not ok:
+            return False, message
 
         self.actions_taken.append(("route_claimed", route))
         self.notify()  # Notify observers that the board state changed
-        return True, "Route claimed."
+        return True, message
 
     def next_turn(self):
         if self.end_game_tracker.game_over():

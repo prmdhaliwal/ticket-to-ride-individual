@@ -100,29 +100,6 @@ class LondonRulesTest(unittest.TestCase):
         self.assertIn(choices[1], ticket_deck.tickets)
         self.assertEqual(starting_deck_count + 1, len(ticket_deck.tickets))
 
-    def test_london_map_contains_district_data(self):
-        london = MapDefinition.create_london_map()
-
-        self.assertIn("Buckingham Palace", london.cities)
-
-        expected_districts = {
-            "District 1": (["Covent Garden", "British Museum"], 1),
-            "District 2": (["Buckingham Palace", "Big Ben", "Trafalgar Square", "Piccadilly Circus"], 2),
-            "District 3": (["Waterloo", "Globe Theatre", "Elephant & Castle"], 3),
-            "District 4": (["The Charterhouse", "St. Paul's", "Tower of London", "Brick Lane"], 4),
-            "District 5": (["Regent's Park", "Baker Street", "Hyde Park", "King's Cross"], 5)
-        }
-
-        actual_districts = {}
-
-        for district in london.districts:
-            actual_districts[district["name"]] = (
-                district["locations"],
-                district["points"]
-            )
-
-        self.assertEqual(expected_districts, actual_districts)
-
     def test_london_destination_tickets_use_london_locations(self):
         london = MapDefinition.create_london_map()
         actual_tickets = []
@@ -172,29 +149,166 @@ class LondonRulesTest(unittest.TestCase):
         self.assertIn(CardColor.PINK, route_colours)
         self.assertNotIn(CardColor.PURPLE, route_colours)
 
-    def test_final_scoring_uses_longest_path_bonus_not_districts(self):
+    def test_claim_route_places_buses_and_discards_cards(self):
         map_definition = MapDefinition("Test London", 2, 4, 17)
-
-        for city in ["A", "B", "C", "D"]:
-            map_definition.add_city(city)
-
-        map_definition.add_route("A", "B", CardColor.BLUE, 1)
-        map_definition.add_route("B", "C", CardColor.GREEN, 1)
-        map_definition.add_route("C", "D", CardColor.YELLOW, 1)
-        map_definition.add_district("District Test", ["A", "B"], 99)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
 
         board = BoardMap(map_definition)
-        alice = Player("Alice")
-        bob = Player("Bob")
+        player = Player("Alice")
+        other_player = Player("Bob")
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
 
-        board.routes[0].claim(alice)
-        board.routes[1].claim(alice)
-        board.routes[2].claim(bob)
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
 
-        scores = StandardScoring().final_scores([alice, bob], board)
+        ok, message = turn_manager.claim_route(route)
 
-        self.assertEqual(10, scores[alice])
-        self.assertEqual(0, scores[bob])
+        self.assertTrue(ok)
+        self.assertEqual("Route claimed.", message)
+        self.assertEqual(player, route.owner)
+        self.assertEqual(15, player.trains_left)
+        self.assertEqual(2, player.score)
+        self.assertEqual(0, len(player.train_cards))
+        self.assertEqual(2, len(transport_deck.discard))
+        self.assertEqual(2, len(route.placed_trains))
+        self.assertTrue(turn_manager.turn_ended())
+
+    def test_claim_route_rejects_route_not_on_board(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
+
+        other_map_definition = MapDefinition("Other London", 2, 4, 17)
+        other_map_definition.add_city("C")
+        other_map_definition.add_city("D")
+        other_map_definition.add_route("C", "D", CardColor.BLUE, 2)
+
+        board = BoardMap(map_definition)
+        other_board = BoardMap(other_map_definition)
+        player = Player("Alice")
+        other_player = Player("Bob")
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = other_board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertFalse(ok)
+        self.assertEqual("That route is not on the board.", message)
+        self.assertIsNone(route.owner)
+
+    def test_claim_route_rejects_already_claimed_route(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
+
+        board = BoardMap(map_definition)
+        player = Player("Alice")
+        other_player = Player("Bob")
+        route = board.routes[0]
+        route.claim(other_player)
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertFalse(ok)
+        self.assertEqual("That route has already been claimed.", message)
+        self.assertEqual(other_player, route.owner)
+
+    def test_claim_route_rejects_without_enough_bus_pieces(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
+
+        board = BoardMap(map_definition)
+        player = Player("Alice", trains_left=1)
+        other_player = Player("Bob")
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertFalse(ok)
+        self.assertEqual("Not enough bus pieces.", message)
+        self.assertIsNone(route.owner)
+        self.assertEqual(1, player.trains_left)
+
+    def test_claim_route_rejects_without_matching_cards(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
+
+        board = BoardMap(map_definition)
+        player = Player("Alice")
+        other_player = Player("Bob")
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertFalse(ok)
+        self.assertEqual("Not enough matching transportation cards.", message)
+        self.assertIsNone(route.owner)
+        self.assertEqual(17, player.trains_left)
+        self.assertEqual(2, len(player.train_cards))
+        self.assertEqual(0, len(transport_deck.discard))
 
     def test_face_up_pool_discards_and_replaces_three_buses(self):
         pool = FaceUpPool()

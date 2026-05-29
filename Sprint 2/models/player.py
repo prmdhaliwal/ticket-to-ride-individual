@@ -1,7 +1,5 @@
 """Player classes."""
 
-from models.core import CardColor
-
 
 class ScoringMarker:
     def __init__(self):
@@ -21,79 +19,6 @@ class Player:
         self.starting_ticket_choices = []
         self.marker = ScoringMarker()
 
-    def matching_cards(self, route_colour):
-        # cards that can be used on this route
-        matching = []
-
-        for card in self.train_cards:
-            if card.matches(route_colour):
-                matching.append(card)
-
-        return matching
-
-    def choose_cards_for_route(self, route):
-        if route.colour == CardColor.GRAY:
-            return self.choose_cards_for_gray_route(route)
-
-        matching_cards = self.matching_cards(route.colour)
-        coloured_cards = [c for c in matching_cards if c.colour != CardColor.LOCOMOTIVE]
-        loco_cards = [c for c in matching_cards if c.colour == CardColor.LOCOMOTIVE]
-        
-        cards_to_use = []
-
-        for card in coloured_cards:
-            if len(cards_to_use) < route.length:
-                cards_to_use.append(card)
-
-        for card in loco_cards:
-            if len(cards_to_use) < route.length:
-                cards_to_use.append(card)
-
-        if route.can_accept(cards_to_use):
-            return cards_to_use
-
-        return []
-
-    def choose_cards_for_gray_route(self, route):
-        wild_cards = []
-        cards_by_colour = {}
-
-        for card in self.train_cards:
-            if card.colour == CardColor.LOCOMOTIVE:
-                wild_cards.append(card)
-            else:
-                if card.colour not in cards_by_colour:
-                    cards_by_colour[card.colour] = []
-
-                cards_by_colour[card.colour].append(card)
-
-        sorted_colours = sorted(cards_by_colour.keys(), key=lambda c: len(cards_by_colour[c]), reverse=True)
-
-        for colour in sorted_colours:
-            cards_to_use = []
-
-            for card in cards_by_colour[colour]:
-                if len(cards_to_use) < route.length:
-                    cards_to_use.append(card)
-
-            for card in wild_cards:
-                if len(cards_to_use) < route.length:
-                    cards_to_use.append(card)
-
-            if route.can_accept(cards_to_use):
-                return cards_to_use
-
-        cards_to_use = []
-
-        for card in wild_cards:
-            if len(cards_to_use) < route.length:
-                cards_to_use.append(card)
-
-        if route.can_accept(cards_to_use):
-            return cards_to_use
-
-        return []
-
     def take_train_card(self, card):
         if card:
             self.train_cards.append(card)
@@ -102,9 +27,6 @@ class Player:
         for card in cards:
             if card in self.train_cards:
                 self.train_cards.remove(card)
-
-    def can_claim_route(self, route, cards):
-        return route.can_accept(cards)
 
     def take_tickets(self, new_tickets):
         self.destination_tickets.extend(new_tickets)
