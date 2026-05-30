@@ -790,6 +790,31 @@ class LondonRulesTest(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(1, len(player.train_cards))
 
+    def test_game_controller_returns_visible_destination_tickets(self):
+        player = Player("Alice")
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        turn_manager = TurnManager(
+            [player, Player("Bob")],
+            object(),
+            TrainCarCardDeck([]),
+            ticket_deck,
+            FaceUpPool()
+        )
+        controller = GameController(turn_manager)
+
+        drawn, message = controller.draw_destination_tickets()
+        visible_tickets = controller.get_visible_destination_tickets()
+
+        self.assertEqual("Destination cards drawn.", message)
+        self.assertEqual(drawn, visible_tickets)
+        self.assertEqual(3, len(visible_tickets))
+
 
 if __name__ == "__main__":
     unittest.main()
