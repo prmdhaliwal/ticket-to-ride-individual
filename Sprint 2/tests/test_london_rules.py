@@ -1,4 +1,6 @@
+import json
 import sys
+import tempfile
 import unittest
 from collections import Counter
 from pathlib import Path
@@ -15,6 +17,7 @@ from models.cards import ColouredCarCard, LocomotiveCard
 from models.core import CardColor, RouteType
 from models.decks import DestinationTicketDeck, FaceUpPool, TrainCarCardDeck
 from models.destination_ticket_market import DestinationTicketMarket
+from models.map_catalog import MapCatalog
 from models.map_definition import MapDefinition
 from models.player import Player
 from models.scoring import StandardScoring
@@ -198,6 +201,167 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(1, ferry_routes[0]["required_locomotives"])
         self.assertEqual(5, len(ferry_routes[0]["points"]))
         self.assertEqual(3, len(ferry_routes[0]["segment_points"]))
+
+    def test_map_catalog_lists_london(self):
+        catalog = MapCatalog()
+        available_maps = catalog.available_maps()
+
+        self.assertIn("London", available_maps)
+
+    def test_map_catalog_loads_london_map_data(self):
+        catalog = MapCatalog()
+        london = catalog.load_map("London")
+        actual_scores = {}
+        ferry_routes = []
+        actual_tickets = []
+        route_colours = []
+
+        for route_length in london.route_scores:
+            actual_scores[route_length] = london.route_scores[route_length]
+
+        for route in london.routes:
+            route_colours.append(route["color"])
+
+            if route["route_type"] == RouteType.FERRY:
+                ferry_routes.append(route)
+
+        for ticket in london.tickets:
+            actual_tickets.append((
+                ticket["start"],
+                ticket["end"],
+                ticket["points"]
+            ))
+
+        expected_scores = {
+            1: 1,
+            2: 2,
+            3: 4,
+            4: 7
+        }
+        expected_ticket = ("British Museum", "Piccadilly Circus", 2)
+
+        self.assertEqual("London", london.map_name)
+        self.assertEqual(2, london.min_players)
+        self.assertEqual(4, london.max_players)
+        self.assertEqual(17, london.initial_train_pieces)
+        self.assertEqual(expected_scores, actual_scores)
+        self.assertEqual(17, len(london.cities))
+        self.assertEqual(43, len(london.routes))
+        self.assertEqual(20, len(london.tickets))
+        self.assertEqual({"x": 953.0, "y": 612.0}, london.layout_size)
+        self.assertIn(CardColor.PINK, route_colours)
+        self.assertIn(expected_ticket, actual_tickets)
+        self.assertGreaterEqual(len(ferry_routes), 1)
+        self.assertEqual("Tower of London", ferry_routes[0]["start"])
+        self.assertEqual("Globe Theatre", ferry_routes[0]["end"])
+        self.assertEqual(CardColor.GRAY, ferry_routes[0]["color"])
+        self.assertEqual(RouteType.FERRY, ferry_routes[0]["route_type"])
+        self.assertEqual(1, ferry_routes[0]["required_locomotives"])
+
+    def test_map_catalog_loads_temporary_map_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            map_config = {
+                "map_name": "Tiny Map",
+                "min_players": 2,
+                "max_players": 5,
+                "initial_train_pieces": 12,
+                "map_size": {
+                    "x": 100,
+                    "y": 200
+                },
+                "route_scores": {
+                    "1": 3,
+                    "2": 6
+                },
+                "cities": [
+                    {
+                        "id": "a",
+                        "display_name": "A",
+                        "position": {
+                            "x": 10,
+                            "y": 20
+                        }
+                    },
+                    {
+                        "id": "b",
+                        "display_name": "B",
+                        "position": {
+                            "x": 30,
+                            "y": 40
+                        }
+                    }
+                ],
+                "routes": [
+                    {
+                        "from_city_id": "a",
+                        "to_city_id": "b",
+                        "cart_type": "PURPLE",
+                        "route_length": 2,
+                        "route_type": "FERRY",
+                        "required_locomotives": 1,
+                        "points": [
+                            {
+                                "x": 50,
+                                "y": 60
+                            }
+                        ],
+                        "segment_points": [
+                            {
+                                "position": {
+                                    "x": 70,
+                                    "y": 80
+                                },
+                                "rotation_radians": 1.5
+                            }
+                        ]
+                    }
+                ],
+                "tickets": [
+                    {
+                        "from_city_id": "a",
+                        "to_city_id": "b",
+                        "points": 9
+                    }
+                ]
+            }
+            file_path = Path(temp_dir) / "tiny_map_config.json"
+
+            with open(file_path, "w", encoding="utf-8") as config_file:
+                json.dump(map_config, config_file)
+
+            catalog = MapCatalog(temp_dir)
+            available_maps = catalog.available_maps()
+            tiny_map = catalog.load_map("Tiny Map")
+
+            self.assertIn("Tiny Map", available_maps)
+            self.assertEqual("Tiny Map", tiny_map.map_name)
+            self.assertEqual(2, tiny_map.min_players)
+            self.assertEqual(5, tiny_map.max_players)
+            self.assertEqual(12, tiny_map.initial_train_pieces)
+            self.assertEqual({1: 3, 2: 6}, tiny_map.route_scores)
+            self.assertEqual({"x": 100, "y": 200}, tiny_map.layout_size)
+            self.assertEqual(["A", "B"], tiny_map.cities)
+            self.assertEqual(1, len(tiny_map.routes))
+            self.assertEqual(1, len(tiny_map.tickets))
+            self.assertEqual("A", tiny_map.routes[0]["start"])
+            self.assertEqual("B", tiny_map.routes[0]["end"])
+            self.assertEqual(CardColor.PINK, tiny_map.routes[0]["color"])
+            self.assertEqual(RouteType.FERRY, tiny_map.routes[0]["route_type"])
+            self.assertEqual(1, tiny_map.routes[0]["required_locomotives"])
+            self.assertEqual(1, len(tiny_map.routes[0]["points"]))
+            self.assertEqual(1, len(tiny_map.routes[0]["segment_points"]))
+            self.assertEqual("A", tiny_map.tickets[0]["start"])
+            self.assertEqual("B", tiny_map.tickets[0]["end"])
+            self.assertEqual(9, tiny_map.tickets[0]["points"])
+
+    def test_map_catalog_rejects_unknown_map(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            catalog = MapCatalog(temp_dir)
+
+            with self.assertRaises(ValueError) as context:
+                catalog.load_map("Unknown Map")
+
+            self.assertEqual("Map 'Unknown Map' was not found.", str(context.exception))
 
     def test_routes_default_to_standard_route_type(self):
         map_definition = MapDefinition("Test London", 2, 4, 17)
