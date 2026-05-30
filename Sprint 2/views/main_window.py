@@ -814,7 +814,8 @@ class MainWindow(Observer):
             messagebox.showerror("Error", msg)
             return
 
-        self.show_ticket_selection(result)
+        tickets = self.controller.get_visible_destination_tickets()
+        self.show_ticket_selection(tickets)
 
     def show_starting_ticket_choices(self):
         choices = self.controller.starting_ticket_choices()
@@ -879,18 +880,26 @@ class MainWindow(Observer):
 
     def show_ticket_selection(self, tickets):
         top = tk.Toplevel(self.root)
-        top.title("Select Tickets")
+        top.title("Ticket Market")
         top.protocol("WM_DELETE_WINDOW", lambda: None) # Disable closing window
         
-        ttk.Label(top, text="Select tickets to keep:").pack(pady=(15, 10), padx=20)
+        ttk.Label(
+            top,
+            text="Choose visible market tickets to keep:"
+        ).pack(pady=(15, 10), padx=20)
         
         check_frame = ttk.Frame(top)
         check_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
         
         ticket_vars = []
-        for t in tickets:
+        for ticket in tickets:
             var = tk.BooleanVar(value=True)
-            cb = ttk.Checkbutton(check_frame, text=f"{t.from_city} to {t.to_city} ({t.points})", variable=var)
+            text = f"{ticket.from_city} to {ticket.to_city} ({ticket.points})"
+            cb = ttk.Checkbutton(
+                check_frame,
+                text=text,
+                variable=var
+            )
             cb.pack(anchor=tk.W, pady=2)
             ticket_vars.append(var)
             
@@ -904,13 +913,22 @@ class MainWindow(Observer):
                 else:
                     returned.append(tickets[index])
 
-            success, msg = self.controller.keep_destination_tickets(kept_tickets=kept, returned_tickets=returned)
+            success, msg = self.controller.keep_destination_tickets(
+                kept_tickets=kept,
+                returned_tickets=returned
+            )
+
             if not success:
                 messagebox.showerror("Error", msg)
             else:
                 top.destroy()
             
-        ttk.Button(top, text="Keep Selected", command=confirm, style="Accent.TButton").pack(pady=(15, 20), padx=20)
+        ttk.Button(
+            top,
+            text="Keep Selected",
+            command=confirm,
+            style="Accent.TButton"
+        ).pack(pady=(15, 20), padx=20)
 
     def show_game_over_popup(self, winners, scores):
         top = tk.Toplevel(self.root)

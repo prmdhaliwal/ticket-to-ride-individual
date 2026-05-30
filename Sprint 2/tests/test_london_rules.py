@@ -14,6 +14,7 @@ from models.board import BoardMap
 from models.cards import ColouredCarCard, LocomotiveCard
 from models.core import CardColor, RouteType
 from models.decks import DestinationTicketDeck, FaceUpPool, TrainCarCardDeck
+from models.destination_ticket_market import DestinationTicketMarket
 from models.map_definition import MapDefinition
 from models.player import Player
 from models.scoring import StandardScoring
@@ -64,6 +65,14 @@ class LondonRulesTest(unittest.TestCase):
             self.assertEqual(2, len(player.train_cards))
             self.assertEqual(0, len(player.destination_tickets))
             self.assertEqual(2, len(player.starting_ticket_choices))
+
+    def test_setup_creates_visible_ticket_market_after_starting_tickets(self):
+        turn_manager = GameSetup().set_up_game(
+            MapDefinition.create_london_map(),
+            ["Alice", "Bob"]
+        )
+
+        self.assertEqual(3, len(turn_manager.ticket_market.visible()))
 
     def test_backend_setup_rejects_invalid_player_counts(self):
         map_definition = self.make_small_map()
@@ -580,7 +589,45 @@ class LondonRulesTest(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(1, len(player.train_cards))
 
-    def test_draw_destination_tickets_draws_two_and_keeps_one(self):
+    def test_draw_destination_tickets_shows_three_market_tickets_and_keeps_one(self):
+        player = Player("Alice")
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+            DestinationTicket("D", "E", 4),
+            DestinationTicket("E", "F", 5),
+            DestinationTicket("F", "G", 6),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        turn_manager = TurnManager(
+            [player, Player("Bob")],
+            object(),
+            TrainCarCardDeck([]),
+            ticket_deck,
+            FaceUpPool()
+        )
+
+        drawn, message = turn_manager.draw_destination_tickets()
+        self.assertEqual("Destination cards drawn.", message)
+        self.assertEqual(3, len(drawn))
+        self.assertEqual(drawn, turn_manager.ticket_market.visible())
+
+        returned_tickets = [drawn[1], drawn[2]]
+        ok, message = turn_manager.keep_destination_tickets([drawn[0]], returned_tickets)
+
+        self.assertTrue(ok)
+        self.assertEqual("Tickets kept.", message)
+        self.assertTrue(turn_manager.turn_ended())
+        self.assertEqual(1, len(player.destination_tickets))
+        self.assertEqual(drawn[0], player.destination_tickets[0])
+        self.assertEqual(3, len(turn_manager.ticket_market.visible()))
+
+        for ticket in returned_tickets:
+            self.assertIn(ticket, ticket_deck.tickets)
+
+    def test_draw_destination_tickets_rejects_after_action_taken(self):
         player = Player("Alice")
         tickets = [
             DestinationTicket("A", "B", 1),
@@ -596,17 +643,124 @@ class LondonRulesTest(unittest.TestCase):
             ticket_deck,
             FaceUpPool()
         )
+        turn_manager.actions_taken.append((
+            "train_card_drawn",
+            ColouredCarCard(CardColor.BLUE),
+            "blind"
+        ))
 
-        drawn, message = turn_manager.draw_destination_tickets()
-        self.assertEqual(2, len(drawn))
+        ok, message = turn_manager.draw_destination_tickets()
 
-        ok, message = turn_manager.keep_destination_tickets([drawn[0]], [drawn[1]])
+        self.assertFalse(ok)
+        self.assertEqual("Turn over or another action taken.", message)
+
+    def test_ticket_market_fills_up_to_three_tickets(self):
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+            DestinationTicket("D", "E", 4),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        market = DestinationTicketMarket()
+
+        market.refill(ticket_deck)
+
+        self.assertEqual(3, len(market.visible()))
+        self.assertEqual(1, len(ticket_deck.tickets))
+
+    def test_ticket_market_can_show_fewer_than_three_tickets(self):
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        market = DestinationTicketMarket()
+
+        market.refill(ticket_deck)
+
+        self.assertEqual(2, len(market.visible()))
+        self.assertEqual(0, len(ticket_deck.tickets))
+
+    def test_ticket_market_keeps_selected_tickets(self):
+        player = Player("Alice")
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+            DestinationTicket("D", "E", 4),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        market = DestinationTicketMarket()
+        market.refill(ticket_deck)
+        visible_tickets = market.visible()
+
+        ok, message = market.choose_tickets(
+            player,
+            [visible_tickets[0]],
+            [visible_tickets[1], visible_tickets[2]],
+            ticket_deck
+        )
 
         self.assertTrue(ok)
-        self.assertTrue(turn_manager.turn_ended())
+        self.assertEqual("Tickets kept.", message)
         self.assertEqual(1, len(player.destination_tickets))
-        self.assertEqual(drawn[0], player.destination_tickets[0])
-        self.assertIn(drawn[1], ticket_deck.tickets)
+        self.assertEqual(visible_tickets[0], player.destination_tickets[0])
+
+    def test_ticket_market_returns_rejected_tickets(self):
+        player = Player("Alice")
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+            DestinationTicket("D", "E", 4),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        market = DestinationTicketMarket()
+        market.refill(ticket_deck)
+        visible_tickets = market.visible()
+        rejected_tickets = [visible_tickets[1], visible_tickets[2]]
+
+        ok, message = market.choose_tickets(
+            player,
+            [visible_tickets[0]],
+            rejected_tickets,
+            ticket_deck
+        )
+
+        self.assertTrue(ok)
+
+        for ticket in rejected_tickets:
+            self.assertIn(ticket, ticket_deck.tickets)
+
+    def test_ticket_market_rejects_choosing_zero_tickets(self):
+        player = Player("Alice")
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        market = DestinationTicketMarket()
+        market.refill(ticket_deck)
+        visible_tickets = market.visible()
+
+        ok, message = market.choose_tickets(
+            player,
+            [],
+            visible_tickets,
+            ticket_deck
+        )
+
+        self.assertFalse(ok)
+        self.assertEqual("You must keep at least one ticket.", message)
+        self.assertEqual(0, len(player.destination_tickets))
+        self.assertEqual(3, len(market.visible()))
 
     def test_game_controller_draw_train_card_delegates_to_turn_manager(self):
         player = Player("Alice")
@@ -635,6 +789,31 @@ class LondonRulesTest(unittest.TestCase):
 
         self.assertTrue(ok)
         self.assertEqual(1, len(player.train_cards))
+
+    def test_game_controller_returns_visible_destination_tickets(self):
+        player = Player("Alice")
+        tickets = [
+            DestinationTicket("A", "B", 1),
+            DestinationTicket("B", "C", 2),
+            DestinationTicket("C", "D", 3),
+        ]
+
+        ticket_deck = DestinationTicketDeck(tickets)
+        turn_manager = TurnManager(
+            [player, Player("Bob")],
+            object(),
+            TrainCarCardDeck([]),
+            ticket_deck,
+            FaceUpPool()
+        )
+        controller = GameController(turn_manager)
+
+        drawn, message = controller.draw_destination_tickets()
+        visible_tickets = controller.get_visible_destination_tickets()
+
+        self.assertEqual("Destination cards drawn.", message)
+        self.assertEqual(drawn, visible_tickets)
+        self.assertEqual(3, len(visible_tickets))
 
 
 if __name__ == "__main__":
