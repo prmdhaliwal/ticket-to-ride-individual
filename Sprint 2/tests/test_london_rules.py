@@ -12,7 +12,7 @@ from controllers.game_controller import GameController
 from controllers.game_setup import GameSetup
 from models.board import BoardMap
 from models.cards import ColouredCarCard, LocomotiveCard
-from models.core import CardColor
+from models.core import CardColor, RouteType
 from models.decks import DestinationTicketDeck, FaceUpPool, TrainCarCardDeck
 from models.map_definition import MapDefinition
 from models.player import Player
@@ -148,6 +148,56 @@ class LondonRulesTest(unittest.TestCase):
 
         self.assertIn(CardColor.PINK, route_colours)
         self.assertNotIn(CardColor.PURPLE, route_colours)
+
+    def test_london_map_contains_ferry_route(self):
+        london = MapDefinition.create_london_map()
+        ferry_routes = []
+
+        for route in london.routes:
+            if route["route_type"] == RouteType.FERRY:
+                ferry_routes.append(route)
+
+        self.assertGreaterEqual(len(ferry_routes), 1)
+        self.assertEqual("Tower of London", ferry_routes[0]["start"])
+        self.assertEqual("Globe Theatre", ferry_routes[0]["end"])
+        self.assertEqual(1, ferry_routes[0]["required_locomotives"])
+
+    def test_routes_default_to_standard_route_type(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
+
+        board = BoardMap(map_definition)
+        route_data = map_definition.routes[0]
+        route = board.routes[0]
+
+        self.assertEqual(RouteType.STANDARD, route_data["route_type"])
+        self.assertEqual(0, route_data["required_locomotives"])
+        self.assertEqual(RouteType.STANDARD, route.route_type)
+        self.assertEqual(0, route.required_locomotives)
+
+    def test_routes_keep_ferry_route_details(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route(
+            "A",
+            "B",
+            CardColor.GRAY,
+            3,
+            route_type=RouteType.FERRY,
+            required_locomotives=1
+        )
+
+        board = BoardMap(map_definition)
+        route_data = map_definition.routes[0]
+        route = board.routes[0]
+
+        self.assertEqual(RouteType.FERRY, route_data["route_type"])
+        self.assertEqual(1, route_data["required_locomotives"])
+        self.assertEqual(RouteType.FERRY, route.route_type)
+        self.assertEqual(1, route.required_locomotives)
 
     def test_claim_route_places_buses_and_discards_cards(self):
         map_definition = MapDefinition("Test London", 2, 4, 17)
@@ -308,6 +358,135 @@ class LondonRulesTest(unittest.TestCase):
         self.assertIsNone(route.owner)
         self.assertEqual(17, player.trains_left)
         self.assertEqual(2, len(player.train_cards))
+        self.assertEqual(0, len(transport_deck.discard))
+
+    def test_claim_ferry_route_with_required_locomotive(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route(
+            "A",
+            "B",
+            CardColor.BLUE,
+            2,
+            route_type=RouteType.FERRY,
+            required_locomotives=1
+        )
+
+        board = BoardMap(map_definition)
+        player = Player("Alice")
+        other_player = Player("Bob")
+        player.take_train_card(LocomotiveCard())
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertTrue(ok)
+        self.assertEqual("Route claimed.", message)
+        self.assertEqual(player, route.owner)
+        self.assertEqual(15, player.trains_left)
+        self.assertEqual(2, player.score)
+        self.assertEqual(0, len(player.train_cards))
+        self.assertEqual(2, len(transport_deck.discard))
+        self.assertEqual(2, len(route.placed_trains))
+
+    def test_claim_ferry_route_with_three_extra_cards_for_missing_locomotive(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route(
+            "A",
+            "B",
+            CardColor.BLUE,
+            2,
+            route_type=RouteType.FERRY,
+            required_locomotives=1
+        )
+
+        board = BoardMap(map_definition)
+        player = Player("Alice")
+        other_player = Player("Bob")
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertTrue(ok)
+        self.assertEqual("Route claimed.", message)
+        self.assertEqual(player, route.owner)
+        self.assertEqual(15, player.trains_left)
+        self.assertEqual(2, player.score)
+        self.assertEqual(0, len(player.train_cards))
+        self.assertEqual(5, len(transport_deck.discard))
+        self.assertEqual(2, len(route.placed_trains))
+
+    def test_claim_ferry_route_rejects_without_substitute_cards(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route(
+            "A",
+            "B",
+            CardColor.BLUE,
+            2,
+            route_type=RouteType.FERRY,
+            required_locomotives=1
+        )
+
+        board = BoardMap(map_definition)
+        player = Player("Alice")
+        other_player = Player("Bob")
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertFalse(ok)
+        self.assertEqual("Not enough matching transportation cards.", message)
+        self.assertIsNone(route.owner)
+        self.assertEqual(17, player.trains_left)
+        self.assertEqual(4, len(player.train_cards))
         self.assertEqual(0, len(transport_deck.discard))
 
     def test_face_up_pool_discards_and_replaces_three_buses(self):

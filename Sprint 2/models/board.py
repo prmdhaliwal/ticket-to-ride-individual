@@ -1,6 +1,7 @@
 """Board, city, and route classes."""
 
 from models.core import CardColor
+from models.core import RouteType
 
 
 class City:
@@ -26,13 +27,23 @@ class City:
 
 
 class Route:
-    def __init__(self, city_a, city_b, colour, length):
+    def __init__(
+        self,
+        city_a,
+        city_b,
+        colour,
+        length,
+        route_type=RouteType.STANDARD,
+        required_locomotives=0
+    ):
         # route connects two cities and starts unclaimed
         self.cities = [city_a, city_b]
         self.city_a = city_a
         self.city_b = city_b
         self.colour = colour
         self.length = length
+        self.route_type = route_type
+        self.required_locomotives = required_locomotives
         self.owner = None
         self.placed_trains = []
         self.twin_route = None
@@ -110,7 +121,14 @@ class BoardMap:
             for route_data in map_definition.routes:
                 c1 = self.cities[route_data["start"]]
                 c2 = self.cities[route_data["end"]]
-                route = Route(c1, c2, route_data["color"], route_data["length"])
+                route = Route(
+                    c1,
+                    c2,
+                    route_data["color"],
+                    route_data["length"],
+                    route_data.get("route_type", RouteType.STANDARD),
+                    route_data.get("required_locomotives", 0)
+                )
                 route.visual_points = route_data.get("points", [])
                 route.segment_points = route_data.get("segment_points", [])
                 self.routes.append(route)
