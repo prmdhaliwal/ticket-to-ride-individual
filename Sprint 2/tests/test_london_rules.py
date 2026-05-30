@@ -109,6 +109,29 @@ class LondonRulesTest(unittest.TestCase):
         self.assertIn(choices[1], ticket_deck.tickets)
         self.assertEqual(starting_deck_count + 1, len(ticket_deck.tickets))
 
+    def test_london_map_uses_london_settings_and_route_scores(self):
+        london = MapDefinition.create_london_map()
+        actual_scores = {}
+
+        for route_length in london.route_scores:
+            actual_scores[route_length] = london.route_scores[route_length]
+
+        expected_scores = {
+            1: 1,
+            2: 2,
+            3: 4,
+            4: 7
+        }
+
+        self.assertEqual("London", london.map_name)
+        self.assertEqual(2, london.min_players)
+        self.assertEqual(4, london.max_players)
+        self.assertEqual(17, london.initial_train_pieces)
+        self.assertEqual(expected_scores, actual_scores)
+        self.assertEqual(17, len(london.cities))
+        self.assertEqual(43, len(london.routes))
+        self.assertEqual({"x": 953.0, "y": 612.0}, london.layout_size)
+
     def test_london_destination_tickets_use_london_locations(self):
         london = MapDefinition.create_london_map()
         actual_tickets = []
@@ -169,7 +192,12 @@ class LondonRulesTest(unittest.TestCase):
         self.assertGreaterEqual(len(ferry_routes), 1)
         self.assertEqual("Tower of London", ferry_routes[0]["start"])
         self.assertEqual("Globe Theatre", ferry_routes[0]["end"])
+        self.assertEqual(CardColor.GRAY, ferry_routes[0]["color"])
+        self.assertEqual(3, ferry_routes[0]["length"])
+        self.assertEqual(RouteType.FERRY, ferry_routes[0]["route_type"])
         self.assertEqual(1, ferry_routes[0]["required_locomotives"])
+        self.assertEqual(5, len(ferry_routes[0]["points"]))
+        self.assertEqual(3, len(ferry_routes[0]["segment_points"]))
 
     def test_routes_default_to_standard_route_type(self):
         map_definition = MapDefinition("Test London", 2, 4, 17)
