@@ -5,6 +5,7 @@ import os
 import sys
 
 from models.core import CardColor
+from models.core import RouteType
 
 
 class MapDefinition:
@@ -38,12 +39,24 @@ class MapDefinition:
                 "y": y
             }
 
-    def add_route(self, city_a, city_b, colour, length, points=None, segment_points=None):
+    def add_route(
+        self,
+        city_a,
+        city_b,
+        colour,
+        length,
+        points=None,
+        segment_points=None,
+        route_type=RouteType.STANDARD,
+        required_locomotives=0
+    ):
         route_data = {
             "start": city_a, 
             "end": city_b, 
             "color": colour, 
-            "length": length
+            "length": length,
+            "route_type": route_type,
+            "required_locomotives": required_locomotives
         }
 
         if points is not None:

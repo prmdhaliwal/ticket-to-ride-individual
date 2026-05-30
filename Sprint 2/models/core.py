@@ -17,6 +17,11 @@ class CardColor(Enum):
     LOCOMOTIVE = "Locomotive"
 
 
+class RouteType(Enum):
+    STANDARD = "Standard"
+    FERRY = "Ferry"
+
+
 class Observer:
     def update(self):
         pass

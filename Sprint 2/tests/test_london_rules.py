@@ -12,7 +12,7 @@ from controllers.game_controller import GameController
 from controllers.game_setup import GameSetup
 from models.board import BoardMap
 from models.cards import ColouredCarCard, LocomotiveCard
-from models.core import CardColor
+from models.core import CardColor, RouteType
 from models.decks import DestinationTicketDeck, FaceUpPool, TrainCarCardDeck
 from models.map_definition import MapDefinition
 from models.player import Player
@@ -148,6 +148,43 @@ class LondonRulesTest(unittest.TestCase):
 
         self.assertIn(CardColor.PINK, route_colours)
         self.assertNotIn(CardColor.PURPLE, route_colours)
+
+    def test_routes_default_to_standard_route_type(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route("A", "B", CardColor.BLUE, 2)
+
+        board = BoardMap(map_definition)
+        route_data = map_definition.routes[0]
+        route = board.routes[0]
+
+        self.assertEqual(RouteType.STANDARD, route_data["route_type"])
+        self.assertEqual(0, route_data["required_locomotives"])
+        self.assertEqual(RouteType.STANDARD, route.route_type)
+        self.assertEqual(0, route.required_locomotives)
+
+    def test_routes_keep_ferry_route_details(self):
+        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route(
+            "A",
+            "B",
+            CardColor.GRAY,
+            3,
+            route_type=RouteType.FERRY,
+            required_locomotives=1
+        )
+
+        board = BoardMap(map_definition)
+        route_data = map_definition.routes[0]
+        route = board.routes[0]
+
+        self.assertEqual(RouteType.FERRY, route_data["route_type"])
+        self.assertEqual(1, route_data["required_locomotives"])
+        self.assertEqual(RouteType.FERRY, route.route_type)
+        self.assertEqual(1, route.required_locomotives)
 
     def test_claim_route_places_buses_and_discards_cards(self):
         map_definition = MapDefinition("Test London", 2, 4, 17)
