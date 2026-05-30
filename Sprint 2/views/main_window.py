@@ -5,6 +5,7 @@ import sv_ttk
 from tkinter import ttk, messagebox
 from models.core import Observer
 from models.core import CardColor
+from models.core import RouteType
 
 class MainWindow(Observer):
     def __init__(self, root, controller):
@@ -445,6 +446,32 @@ class MainWindow(Observer):
             return colours[route.colour]
 
         return "#8c9299"
+
+    def route_list_text(self, route):
+        owner_name = "None"
+
+        if route.owner is not None:
+            owner_name = route.owner.name
+
+        route_details = f"{route.length} {route.colour.value}"
+        route_type = getattr(route, "route_type", RouteType.STANDARD)
+
+        if route_type == RouteType.FERRY:
+            required_locomotives = getattr(route, "required_locomotives", 0)
+            bus_label = "Bus"
+
+            if required_locomotives != 1:
+                bus_label = "Buses"
+
+            route_details = (
+                f"{route_details}, "
+                f"Ferry: {required_locomotives} {bus_label}"
+            )
+
+        return (
+            f"{route.city_a.name} - {route.city_b.name} "
+            f"({route_details}) Owner: {owner_name}"
+        )
 
     def draw_face_up_card_boxes(self, cards):
         if not hasattr(self, "pool_canvas"):
@@ -978,12 +1005,11 @@ class MainWindow(Observer):
             if len(route_items) != len(routes):
                 self.route_listbox.delete(*route_items)
                 for r in routes:
-                    owner_name = r.owner.name if r.owner else "None"
-                    self.route_listbox.insert("", tk.END, text=f"{r.city_a.name} - {r.city_b.name} ({r.length} {r.colour.value}) Owner: {owner_name}")
+                    route_text = self.route_list_text(r)
+                    self.route_listbox.insert("", tk.END, text=route_text)
             else:
                 for i, r in enumerate(routes):
-                    owner_name = r.owner.name if r.owner else "None"
-                    new_text = f"{r.city_a.name} - {r.city_b.name} ({r.length} {r.colour.value}) Owner: {owner_name}"
+                    new_text = self.route_list_text(r)
                     if self.route_listbox.item(route_items[i], "text") != new_text:
                         self.route_listbox.item(route_items[i], text=new_text)
 
