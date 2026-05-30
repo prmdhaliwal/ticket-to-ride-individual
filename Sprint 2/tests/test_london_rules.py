@@ -149,6 +149,19 @@ class LondonRulesTest(unittest.TestCase):
         self.assertIn(CardColor.PINK, route_colours)
         self.assertNotIn(CardColor.PURPLE, route_colours)
 
+    def test_london_map_contains_ferry_route(self):
+        london = MapDefinition.create_london_map()
+        ferry_routes = []
+
+        for route in london.routes:
+            if route["route_type"] == RouteType.FERRY:
+                ferry_routes.append(route)
+
+        self.assertGreaterEqual(len(ferry_routes), 1)
+        self.assertEqual("Tower of London", ferry_routes[0]["start"])
+        self.assertEqual("Globe Theatre", ferry_routes[0]["end"])
+        self.assertEqual(1, ferry_routes[0]["required_locomotives"])
+
     def test_routes_default_to_standard_route_type(self):
         map_definition = MapDefinition("Test London", 2, 4, 17)
         map_definition.add_city("A")

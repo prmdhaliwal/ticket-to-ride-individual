@@ -172,8 +172,19 @@ class MapDefinition:
             length = route_data.get("route_length", 1)
             points = self.points_from_config(route_data.get("points", []))
             segment_points = self.segment_points_from_config(route_data.get("segment_points", []))
+            route_type = self.route_type_from_config(route_data.get("route_type"))
+            required_locomotives = route_data.get("required_locomotives", 0)
 
-            self.add_route(city_a, city_b, colour, length, points, segment_points)
+            self.add_route(
+                city_a,
+                city_b,
+                colour,
+                length,
+                points,
+                segment_points,
+                route_type,
+                required_locomotives
+            )
 
         return True
 
@@ -207,6 +218,17 @@ class MapDefinition:
             return CardColor[upper_name]
 
         return CardColor.GRAY
+
+    def route_type_from_config(self, route_type_name):
+        if route_type_name is None:
+            return RouteType.STANDARD
+
+        upper_name = route_type_name.upper()
+
+        if upper_name in RouteType.__members__:
+            return RouteType[upper_name]
+
+        return RouteType.STANDARD
 
     def points_from_config(self, points_data):
         points = []

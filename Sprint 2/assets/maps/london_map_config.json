@@ -1325,6 +1325,8 @@
 				}
 			],
 			"route_length": 3,
+			"route_type": "FERRY",
+			"required_locomotives": 1,
 			"segment_points": [
 				{
 					"index": 0,
