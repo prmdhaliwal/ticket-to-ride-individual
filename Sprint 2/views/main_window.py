@@ -16,7 +16,7 @@ class MainWindow(Observer):
         self.current_ticket_cards = []
         self.selected_pool_index = None
         
-        self.root.title("Ticket to Ride - London")
+        self.root.title(f"Ticket to Ride - {self.controller.map_name()}")
         self.root.geometry("1280x800")
         
         self.map_background_loaded = False
@@ -420,7 +420,7 @@ class MainWindow(Observer):
     def route_display_colour(self, route):
         if route.owner is not None:
             players = self.controller.players()
-            player_colours = ["#1f66d1", "#c0392b", "#138a43", "#8e44ad"]
+            player_colours = ["#1f66d1", "#c0392b", "#138a43", "#8e44ad", "#c27c0e"]
 
             for index, player in enumerate(players):
                 if player == route.owner:
