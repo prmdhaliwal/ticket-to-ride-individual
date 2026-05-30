@@ -116,6 +116,12 @@ class GameController:
 
         return self.turn_manager.draw_destination_tickets()
 
+    def get_visible_destination_tickets(self):
+        if self.turn_manager is None:
+            return []
+
+        return self.turn_manager.ticket_market.visible()
+
     def keep_destination_tickets(self, kept_tickets, returned_tickets):
         if self.turn_manager is None:
             return False, "Game has not been set up."
