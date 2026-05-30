@@ -26,8 +26,25 @@ from models.turns import TurnManager
 
 
 class LondonRulesTest(unittest.TestCase):
+    def make_route_scores(self):
+        return {
+            1: 1,
+            2: 2,
+            3: 4,
+            4: 7
+        }
+
+    def make_route_map(self, map_name="Test London"):
+        return MapDefinition(
+            map_name,
+            2,
+            4,
+            17,
+            self.make_route_scores()
+        )
+
     def make_small_map(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
 
         for city in ["A", "B", "C", "D"]:
             map_definition.add_city(city)
@@ -71,7 +88,7 @@ class LondonRulesTest(unittest.TestCase):
 
     def test_setup_creates_visible_ticket_market_after_starting_tickets(self):
         turn_manager = GameSetup().set_up_game(
-            MapDefinition.create_london_map(),
+            MapCatalog().load_map("London"),
             ["Alice", "Bob"]
         )
 
@@ -113,7 +130,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(starting_deck_count + 1, len(ticket_deck.tickets))
 
     def test_london_map_uses_london_settings_and_route_scores(self):
-        london = MapDefinition.create_london_map()
+        london = MapCatalog().load_map("London")
         actual_scores = {}
 
         for route_length in london.route_scores:
@@ -136,7 +153,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual({"x": 953.0, "y": 612.0}, london.layout_size)
 
     def test_london_destination_tickets_use_london_locations(self):
-        london = MapDefinition.create_london_map()
+        london = MapCatalog().load_map("London")
         actual_tickets = []
 
         for ticket in london.tickets:
@@ -175,7 +192,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertNotIn(("Marylebone", "Borough Market", 4), actual_tickets)
 
     def test_london_map_uses_pink_not_purple_routes(self):
-        london = MapDefinition.create_london_map()
+        london = MapCatalog().load_map("London")
         route_colours = []
 
         for route in london.routes:
@@ -185,7 +202,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertNotIn(CardColor.PURPLE, route_colours)
 
     def test_london_map_contains_ferry_route(self):
-        london = MapDefinition.create_london_map()
+        london = MapCatalog().load_map("London")
         ferry_routes = []
 
         for route in london.routes:
@@ -363,8 +380,33 @@ class LondonRulesTest(unittest.TestCase):
 
             self.assertEqual("Map 'Unknown Map' was not found.", str(context.exception))
 
+    def test_map_definition_copies_route_scores(self):
+        route_scores = self.make_route_scores()
+        map_definition = MapDefinition(
+            "Test London",
+            2,
+            4,
+            17,
+            route_scores
+        )
+
+        route_scores[2] = 99
+
+        self.assertEqual(2, map_definition.route_scores[2])
+
+    def test_game_setup_loads_game_for_map_name(self):
+        turn_manager = GameSetup().set_up_game_for_map(
+            "London",
+            ["Alice", "Bob"]
+        )
+
+        self.assertEqual(2, len(turn_manager.players))
+        self.assertEqual(43, len(turn_manager.board.routes))
+        self.assertEqual(17, turn_manager.players[0].trains_left)
+        self.assertEqual(3, len(turn_manager.ticket_market.visible()))
+
     def test_routes_default_to_standard_route_type(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route("A", "B", CardColor.BLUE, 2)
@@ -379,7 +421,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(0, route.required_locomotives)
 
     def test_routes_keep_ferry_route_details(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route(
@@ -401,7 +443,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(1, route.required_locomotives)
 
     def test_claim_route_places_buses_and_discards_cards(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route("A", "B", CardColor.BLUE, 2)
@@ -437,12 +479,12 @@ class LondonRulesTest(unittest.TestCase):
         self.assertTrue(turn_manager.turn_ended())
 
     def test_claim_route_rejects_route_not_on_board(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route("A", "B", CardColor.BLUE, 2)
 
-        other_map_definition = MapDefinition("Other London", 2, 4, 17)
+        other_map_definition = self.make_route_map("Other London")
         other_map_definition.add_city("C")
         other_map_definition.add_city("D")
         other_map_definition.add_route("C", "D", CardColor.BLUE, 2)
@@ -471,7 +513,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertIsNone(route.owner)
 
     def test_claim_route_rejects_already_claimed_route(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route("A", "B", CardColor.BLUE, 2)
@@ -500,7 +542,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(other_player, route.owner)
 
     def test_claim_route_rejects_without_enough_bus_pieces(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route("A", "B", CardColor.BLUE, 2)
@@ -529,7 +571,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(1, player.trains_left)
 
     def test_claim_route_rejects_without_matching_cards(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route("A", "B", CardColor.BLUE, 2)
@@ -562,7 +604,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(0, len(transport_deck.discard))
 
     def test_claim_ferry_route_with_required_locomotive(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route(
@@ -604,7 +646,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(2, len(route.placed_trains))
 
     def test_claim_ferry_route_with_three_extra_cards_for_missing_locomotive(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route(
@@ -649,7 +691,7 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(2, len(route.placed_trains))
 
     def test_claim_ferry_route_rejects_without_substitute_cards(self):
-        map_definition = MapDefinition("Test London", 2, 4, 17)
+        map_definition = self.make_route_map()
         map_definition.add_city("A")
         map_definition.add_city("B")
         map_definition.add_route(
