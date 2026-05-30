@@ -65,17 +65,18 @@ class MapCatalog:
         min_players = config_data.get("min_players", 2)
         max_players = config_data.get("max_players", 4)
         initial_train_pieces = config_data.get("initial_train_pieces", 17)
+        route_scores = self.route_scores_from_config(
+            config_data.get("route_scores", {})
+        )
 
         map_definition = MapDefinition(
             map_name,
             min_players,
             max_players,
-            initial_train_pieces
+            initial_train_pieces,
+            route_scores
         )
         map_definition.layout_size = config_data.get("map_size")
-        map_definition.route_scores = self.route_scores_from_config(
-            config_data.get("route_scores", {})
-        )
 
         city_names_by_id = self.load_cities(map_definition, config_data)
         self.load_routes(map_definition, config_data, city_names_by_id)
