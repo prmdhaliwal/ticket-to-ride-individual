@@ -98,12 +98,14 @@ class Route:
 
 class BoardMap:
     def __init__(self, map_definition=None):
+        self.map_name = "Unknown Map"
         self.cities = {}
         self.routes = []
         self.route_scores = {}
         self.layout_size = None
 
         if map_definition is not None:
+            self.map_name = map_definition.map_name
             self.route_scores = getattr(map_definition, "route_scores", {}).copy()
             self.layout_size = getattr(map_definition, "layout_size", None)
             city_positions = getattr(map_definition, "city_positions", {})

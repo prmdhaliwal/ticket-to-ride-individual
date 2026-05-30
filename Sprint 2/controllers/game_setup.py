@@ -7,12 +7,22 @@ from models.cards import ColouredCarCard, LocomotiveCard
 from models.tickets import DestinationTicket
 from models.core import CardColor
 from models.destination_ticket_market import DestinationTicketMarket
+from models.map_catalog import MapCatalog
 from models.route_claim_manager import RouteClaimManager
 from models.turns import TurnManager
 
 
 class GameSetup:
     """Responsible for bootstrapping the game state from a MapDefinition."""
+    def __init__(self, map_catalog=None):
+        if map_catalog is None:
+            self.map_catalog = MapCatalog()
+        else:
+            self.map_catalog = map_catalog
+
+    def set_up_game_for_map(self, map_name, player_names):
+        map_def = self.map_catalog.load_map(map_name)
+        return self.set_up_game(map_def, player_names)
     
     def set_up_game(self, map_def, player_names):
         self.validate_player_count(map_def, player_names)

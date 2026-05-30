@@ -22,6 +22,12 @@ class GameController:
 
         return self.turn_manager.board.routes
 
+    def map_name(self):
+        if self.turn_manager is None:
+            return "Unknown Map"
+
+        return self.turn_manager.board.map_name
+
     def players(self):
         if self.turn_manager is None:
             return []

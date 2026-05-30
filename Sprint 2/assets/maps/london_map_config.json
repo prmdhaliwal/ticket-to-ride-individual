@@ -1,4 +1,116 @@
 {
+	"map_name": "London",
+	"min_players": 2,
+	"max_players": 4,
+	"initial_train_pieces": 17,
+	"route_scores": {
+		"1": 1,
+		"2": 2,
+		"3": 4,
+		"4": 7
+	},
+	"tickets": [
+		{
+			"from_city_id": "british_museum",
+			"to_city_id": "piccadilly_circus",
+			"points": 2
+		},
+		{
+			"from_city_id": "piccadilly_circus",
+			"to_city_id": "waterloo",
+			"points": 3
+		},
+		{
+			"from_city_id": "hyde_park",
+			"to_city_id": "covent_gardens",
+			"points": 3
+		},
+		{
+			"from_city_id": "trafalgar_square",
+			"to_city_id": "globe_theatre",
+			"points": 4
+		},
+		{
+			"from_city_id": "british_museum",
+			"to_city_id": "t_pauls",
+			"points": 4
+		},
+		{
+			"from_city_id": "british_museum",
+			"to_city_id": "waterloo",
+			"points": 4
+		},
+		{
+			"from_city_id": "trafalgar_square",
+			"to_city_id": "t_pauls",
+			"points": 4
+		},
+		{
+			"from_city_id": "brick_lane",
+			"to_city_id": "globe_theatre",
+			"points": 4
+		},
+		{
+			"from_city_id": "the_charterhouse",
+			"to_city_id": "big_ben",
+			"points": 5
+		},
+		{
+			"from_city_id": "baker_street",
+			"to_city_id": "trafalgar_square",
+			"points": 5
+		},
+		{
+			"from_city_id": "buckingham_palace",
+			"to_city_id": "Elephant",
+			"points": 5
+		},
+		{
+			"from_city_id": "it_park",
+			"to_city_id": "piccadilly_circus",
+			"points": 5
+		},
+		{
+			"from_city_id": "kings_cross",
+			"to_city_id": "buckingham_palace",
+			"points": 6
+		},
+		{
+			"from_city_id": "hyde_park",
+			"to_city_id": "t_pauls",
+			"points": 6
+		},
+		{
+			"from_city_id": "big_ben",
+			"to_city_id": "TOL",
+			"points": 6
+		},
+		{
+			"from_city_id": "kings_cross",
+			"to_city_id": "TOL",
+			"points": 7
+		},
+		{
+			"from_city_id": "trafalgar_square",
+			"to_city_id": "TOL",
+			"points": 7
+		},
+		{
+			"from_city_id": "buckingham_palace",
+			"to_city_id": "brick_lane",
+			"points": 9
+		},
+		{
+			"from_city_id": "it_park",
+			"to_city_id": "Elephant",
+			"points": 9
+		},
+		{
+			"from_city_id": "baker_street",
+			"to_city_id": "TOL",
+			"points": 11
+		}
+	],
 	"cities": [
 		{
 			"display_name": "It Park",
