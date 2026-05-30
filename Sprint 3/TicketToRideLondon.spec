@@ -5,8 +5,10 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files
 
 
-REPO_ROOT = Path(SPECPATH).parent
-SOURCE_DIR = REPO_ROOT / "Sprint 2"
+REPO_ROOT = Path(SPECPATH)
+if not (REPO_ROOT / "app").exists():
+    REPO_ROOT = REPO_ROOT.parent
+SOURCE_DIR = REPO_ROOT / "app"
 
 datas = [
     (str(SOURCE_DIR / "assets"), "assets"),

@@ -4,11 +4,11 @@ import os
 import sys
 
 
-sprint_2_source = os.path.join(
+app_source = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "Sprint 2"
+    "app"
 )
-sys.path.insert(0, sprint_2_source)
+sys.path.insert(0, app_source)
 
 from main import main
 

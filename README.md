@@ -2,6 +2,14 @@
 
 This repository contains the Sprint 3 Python/Tkinter prototype for Ticket to Ride: London.
 
+## Repository Organisation
+
+- `app/` contains the runnable game source code, tests, and map assets.
+- `Sprint 1/` contains Sprint 1 submission artifacts.
+- `Sprint 2/` contains Sprint 2 submission artifacts only.
+- `Sprint 3/` contains Sprint 3 submission artifacts and the PyInstaller build spec.
+- `prototypes/` contains earlier individual prototype files.
+
 ## Target Platform
 
 The executable is built for Windows.
@@ -12,7 +20,7 @@ Open PowerShell in the repository root, then run:
 
 ```powershell
 python -m pip install sv-ttk
-python "Sprint 3\main.py"
+python app\main.py
 ```
 
 The setup window opens first. Enter the player names, then start the game.
@@ -25,14 +33,13 @@ Open PowerShell in the repository root, then run:
 
 ```powershell
 python -m pip install pyinstaller sv-ttk
-cd "Sprint 3"
-python -m PyInstaller TicketToRideLondon.spec --noconfirm
+python -m PyInstaller "Sprint 3\TicketToRideLondon.spec" --noconfirm --distpath app\dist --workpath app\build
 ```
 
 After the build finishes, the executable is created at:
 
 ```powershell
-Sprint 3\dist\TicketToRideLondon.exe
+app\dist\TicketToRideLondon.exe
 ```
 
 ## Run the Sprint 3 Executable
@@ -40,7 +47,7 @@ Sprint 3\dist\TicketToRideLondon.exe
 From the repository root:
 
 ```powershell
-cd "Sprint 3\dist"
+cd app\dist
 .\TicketToRideLondon.exe
 ```
 
