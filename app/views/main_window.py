@@ -3,9 +3,9 @@ import math
 import tkinter as tk
 import sv_ttk
 from tkinter import ttk, messagebox
-from models.core import Observer
-from models.core import CardColor
-from models.core import RouteType
+from models.card_color import CardColor
+from models.observer import Observer
+from models.route_type import RouteType
 
 class MainWindow(Observer):
     def __init__(self, root, controller):

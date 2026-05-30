@@ -1,7 +1,7 @@
 """Route claiming coordination."""
 
-from models.cards import TrainCar
-from models.core import RouteType
+from models.route_type import RouteType
+from models.train_car import TrainCar
 from models.ferry_route_claim_strategy import FerryRouteClaimStrategy
 from models.standard_route_claim_strategy import StandardRouteClaimStrategy
 

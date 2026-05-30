@@ -1,12 +1,6 @@
-"""Player classes."""
+"""Player class."""
 
-
-class ScoringMarker:
-    def __init__(self):
-        self.position = 0
-
-    def move_by(self, points):
-        self.position += points
+from models.scoring_marker import ScoringMarker
 
 
 class Player:

@@ -1,6 +1,6 @@
 """Controller layer for the game."""
 
-from models.scoring import StandardScoring
+from models.standard_scoring import StandardScoring
 
 
 class GameController:

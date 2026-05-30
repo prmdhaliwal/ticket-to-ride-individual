@@ -4,9 +4,9 @@ import json
 import os
 import sys
 
-from models.core import CardColor
-from models.core import RouteType
+from models.card_color import CardColor
 from models.map_definition import MapDefinition
+from models.route_type import RouteType
 
 
 class MapCatalog:

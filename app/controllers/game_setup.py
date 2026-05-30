@@ -1,15 +1,18 @@
 """Game setup classes."""
 
-from models.board import BoardMap
+from models.board_map import BoardMap
+from models.card_color import CardColor
+from models.coloured_car_card import ColouredCarCard
+from models.destination_ticket import DestinationTicket
+from models.destination_ticket_deck import DestinationTicketDeck
 from models.player import Player
-from models.decks import TrainCarCardDeck, DestinationTicketDeck, FaceUpPool
-from models.cards import ColouredCarCard, LocomotiveCard
-from models.tickets import DestinationTicket
-from models.core import CardColor
 from models.destination_ticket_market import DestinationTicketMarket
+from models.face_up_pool import FaceUpPool
+from models.locomotive_card import LocomotiveCard
 from models.map_catalog import MapCatalog
 from models.route_claim_manager import RouteClaimManager
-from models.turns import TurnManager
+from models.train_car_card_deck import TrainCarCardDeck
+from models.turn_manager import TurnManager
 
 
 class GameSetup:

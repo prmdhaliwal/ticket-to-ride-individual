@@ -12,17 +12,21 @@ sys.path.insert(0, str(SPRINT_DIR))
 
 from controllers.game_controller import GameController
 from controllers.game_setup import GameSetup
-from models.board import BoardMap
-from models.cards import ColouredCarCard, LocomotiveCard
-from models.core import CardColor, RouteType
-from models.decks import DestinationTicketDeck, FaceUpPool, TrainCarCardDeck
+from models.board_map import BoardMap
+from models.card_color import CardColor
+from models.coloured_car_card import ColouredCarCard
+from models.destination_ticket import DestinationTicket
+from models.destination_ticket_deck import DestinationTicketDeck
 from models.destination_ticket_market import DestinationTicketMarket
+from models.face_up_pool import FaceUpPool
+from models.locomotive_card import LocomotiveCard
 from models.map_catalog import MapCatalog
 from models.map_definition import MapDefinition
 from models.player import Player
-from models.scoring import StandardScoring
-from models.tickets import DestinationTicket
-from models.turns import TurnManager
+from models.route_type import RouteType
+from models.standard_scoring import StandardScoring
+from models.train_car_card_deck import TrainCarCardDeck
+from models.turn_manager import TurnManager
 
 
 class LondonRulesTest(unittest.TestCase):

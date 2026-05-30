@@ -1,42 +1,10 @@
-"""Turn flow classes."""
+"""Turn manager class."""
 
-from models.decks import FaceUpPool
-from models.decks import TrainCarCardDeck
-from models.core import CardColor
-from models.core import Subject
+from models.card_color import CardColor
 from models.destination_ticket_market import DestinationTicketMarket
+from models.end_game_tracker import EndGameTracker
 from models.route_claim_manager import RouteClaimManager
-
-
-class EndGameTracker:
-    """Tracks the final round trigger (when a player hits 2 or fewer buses)."""
-    def __init__(self):
-        self.final_round = False
-        self.triggering_player = None
-        self.final_turns_remaining = 0
-        self.game_finished = False
-
-    def check_final_round(self, player, player_count):
-        if self.final_round:
-            return False
-
-        if player.trains_left <= 2:
-            self.final_round = True
-            self.triggering_player = player
-            self.final_turns_remaining = player_count
-            return True
-
-        return False
-
-    def use_final_turn(self):
-        if self.final_round and self.final_turns_remaining > 0:
-            self.final_turns_remaining -= 1
-
-        if self.final_round and self.final_turns_remaining == 0:
-            self.game_finished = True
-
-    def game_over(self):
-        return self.game_finished
+from models.subject import Subject
 
 
 class TurnManager(Subject):
@@ -138,7 +106,7 @@ class TurnManager(Subject):
 
         if not self.starting_tickets_chosen():
             return "Starting tickets must be chosen first."
-            
+
         if not self.turn_ended():
             return "You must complete an action before you end your turn."
 
@@ -151,7 +119,7 @@ class TurnManager(Subject):
             self.end_game_tracker.use_final_turn()
 
         if self.end_game_tracker.game_over():
-            self.notify() # Notify observers of game end
+            self.notify()  # Notify observers of game end
             return "Game over."
 
         self.current_player_index += 1
@@ -171,18 +139,18 @@ class TurnManager(Subject):
         # Check if no actions have been taken yet.
         if not self.actions_taken:
             return False
-            
+
         # Get the first item of the last action taken.
         last_action = self.actions_taken[-1][0]
-        
+
         # Turn ends immediately if a route is claimed.
         if last_action == "route_claimed":
             return True
-            
+
         # Turn ends after keeping drawn destination tickets.
         if last_action == "destination_tickets_kept":
             return True
-            
+
         # Turn ends if player has drawn two train cards or one face-up locomotive.
         if last_action == "train_card_drawn":
             drawn_cards = []
@@ -193,16 +161,16 @@ class TurnManager(Subject):
 
             if len(drawn_cards) >= 2:
                 return True
-                
+
             if len(drawn_cards) == 1:
                 card = drawn_cards[0][1]
                 source = drawn_cards[0][2]
                 if card.colour == CardColor.LOCOMOTIVE and source == "face_up":
                     return True
-                    
+
         return False
-    
-    def draw_train_card(self, from_deck = False, pool_index = None):
+
+    def draw_train_card(self, from_deck=False, pool_index=None):
         """Draws a single train car card from either the deck or face-up pool."""
         # Stop action if the game is already over.
         if self.end_game_tracker.game_over():
@@ -210,12 +178,12 @@ class TurnManager(Subject):
 
         if not self.starting_tickets_chosen():
             return False, "Starting tickets must be chosen first."
-        
+
         # Check if the player has taken actions that end their turn or prevent drawing cards.
         if self.actions_taken:
             if self.actions_taken[0][0] != "train_card_drawn":
                 return False, "You have already taken a different action this turn."
-                
+
             drawn_cards = []
 
             for action in self.actions_taken:
@@ -224,13 +192,13 @@ class TurnManager(Subject):
 
             if len(drawn_cards) >= 2:
                 return False, "Turn over."
-                
+
             if len(drawn_cards) == 1:
                 card = drawn_cards[0][1]
                 source = drawn_cards[0][2]
                 if card.colour == CardColor.LOCOMOTIVE and source == "face_up":
                     return False, "Turn over."
-        
+
         current_player = self.get_current_player()
 
         if from_deck:
@@ -246,23 +214,23 @@ class TurnManager(Subject):
             # Draw a specific card from the face-up pool.
             if pool_index is None or pool_index < 0 or pool_index >= len(self.face_up_pool.face_up_cards):
                 return False, "Invalid face-up card index."
-                
+
             pool_card = self.face_up_pool.face_up_cards[pool_index]
-            
+
             # Prevent drawing a face-up locomotive as the second card.
             if pool_card.colour == CardColor.LOCOMOTIVE:
                 if len(self.actions_taken) == 1:
                     return False, "Cannot draw a face-up Locomotive as your second card."
-            
+
             # Remove from pool and refresh it.
             self.face_up_pool.draw_face_up(pool_index)
             self.face_up_pool.refresh(self.transport_deck)
-            
+
             current_player.take_train_card(pool_card)
             self.actions_taken.append(("train_card_drawn", pool_card, "face_up"))
             self.notify()
             return True, "Face-up card drawn."
-    
+
     def draw_destination_tickets(self):
         """Draws visible destination tickets for the player to choose from."""
         # Stop action if the game is already over.
@@ -271,11 +239,11 @@ class TurnManager(Subject):
 
         if not self.starting_tickets_chosen():
             return False, "Starting tickets must be chosen first."
-        
+
         # Enforce that drawing tickets must be the first action.
         if self.actions_taken:
             return False, "Turn over or another action taken."
-        
+
         # Fill the market if it has no visible tickets.
         if not self.ticket_market.visible():
             self.ticket_market.refill(self.ticket_deck)
@@ -283,21 +251,21 @@ class TurnManager(Subject):
         tickets = self.ticket_market.visible()
         if not tickets:
             return False, "No tickets left."
-            
+
         self.actions_taken.append(("destination_tickets_drawn", tickets))
         self.notify()
         return tickets, "Destination cards drawn."
-        
+
     def keep_destination_tickets(self, kept_tickets, returned_tickets):
         """Keeps selected destination tickets and returns the rest to the deck."""
         # Stop action if the game is already over.
         if self.end_game_tracker.game_over():
             return False, "The game is over."
-            
+
         # Ensure tickets were drawn prior to keeping them.
         if not self.actions_taken or self.actions_taken[-1][0] != "destination_tickets_drawn":
             return False, "You must draw tickets first."
-            
+
         current_player = self.get_current_player()
         ok, message = self.ticket_market.choose_tickets(
             current_player,
@@ -308,7 +276,7 @@ class TurnManager(Subject):
 
         if not ok:
             return False, message
-        
+
         self.actions_taken.append(("destination_tickets_kept", kept_tickets))
         self.notify()
         return True, message

@@ -1,12 +1,6 @@
-"""Scoring classes."""
+"""Standard final scoring rules."""
 
-
-class ScoringStrategy:
-    def final_scores(self, players, board):
-        raise NotImplementedError
-
-    def winners(self, players, board):
-        raise NotImplementedError
+from models.scoring_strategy import ScoringStrategy
 
 
 class StandardScoring(ScoringStrategy):
@@ -133,7 +127,7 @@ class StandardScoring(ScoringStrategy):
                     best_length = length
 
         return best_length
-    
+
     def completed_ticket_count(self, player, board):
         # count tickets where both cities are connected
         completed = 0

@@ -1,6 +1,6 @@
 """Ferry route claiming rules."""
 
-from models.core import CardColor
+from models.card_color import CardColor
 from models.route_claim_strategy import RouteClaimStrategy
 
 

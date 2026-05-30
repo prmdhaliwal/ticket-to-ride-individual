@@ -1,6 +1,6 @@
 """Map definition data."""
 
-from models.core import RouteType
+from models.route_type import RouteType
 
 
 class MapDefinition:
