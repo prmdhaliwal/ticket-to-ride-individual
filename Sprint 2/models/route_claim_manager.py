@@ -1,15 +1,26 @@
 """Route claiming coordination."""
 
 from models.cards import TrainCar
+from models.core import RouteType
+from models.ferry_route_claim_strategy import FerryRouteClaimStrategy
 from models.standard_route_claim_strategy import StandardRouteClaimStrategy
 
 
 class RouteClaimManager:
-    def __init__(self, standard_strategy=None):
+    def __init__(self, standard_strategy=None, ferry_strategy=None):
         if standard_strategy is None:
             self.standard_strategy = StandardRouteClaimStrategy()
         else:
             self.standard_strategy = standard_strategy
+
+        if ferry_strategy is None:
+            self.ferry_strategy = FerryRouteClaimStrategy()
+        else:
+            self.ferry_strategy = ferry_strategy
+
+        self.strategies = {}
+        self.strategies[RouteType.STANDARD] = self.standard_strategy
+        self.strategies[RouteType.FERRY] = self.ferry_strategy
 
     def claim_route(self, player, route, board, transport_deck, player_count):
         if route not in board.routes:
@@ -18,7 +29,8 @@ class RouteClaimManager:
         if not route.is_available(player_count, player):
             return False, "That route has already been claimed."
 
-        ok, message, cards_to_use = self.standard_strategy.can_claim(player, route)
+        strategy = self.strategy_for_route(route)
+        ok, message, cards_to_use = strategy.can_claim(player, route)
         if not ok:
             return False, message
 
@@ -36,3 +48,11 @@ class RouteClaimManager:
             route.placed_trains.append(train)
 
         return True, "Route claimed."
+
+    def strategy_for_route(self, route):
+        route_type = getattr(route, "route_type", RouteType.STANDARD)
+
+        if route_type in self.strategies:
+            return self.strategies[route_type]
+
+        return self.standard_strategy
