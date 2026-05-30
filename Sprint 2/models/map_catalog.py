@@ -203,4 +203,19 @@ class MapCatalog:
             })
 
         return points
-    
+        
+    def load_tickets(self, map_definition, config_data, city_names_by_id):
+        for ticket_data in config_data.get("tickets", []):
+            from_id = ticket_data.get("from_city_id")
+            to_id = ticket_data.get("to_city_id")
+            city_a = city_names_by_id.get(from_id)
+            city_b = city_names_by_id.get(to_id)
+
+            if city_a is not None and city_b is not None:
+                map_definition.add_ticket(
+                    city_a,
+                    city_b,
+                    ticket_data.get("points", 0)
+                )
+
+   
