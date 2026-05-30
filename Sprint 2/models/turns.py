@@ -4,6 +4,7 @@ from models.decks import FaceUpPool
 from models.decks import TrainCarCardDeck
 from models.core import CardColor
 from models.core import Subject
+from models.destination_ticket_market import DestinationTicketMarket
 from models.route_claim_manager import RouteClaimManager
 
 
@@ -40,7 +41,16 @@ class EndGameTracker:
 
 class TurnManager(Subject):
     """Manages the active player and validates actions."""
-    def __init__(self, players, board, transport_deck, ticket_deck, face_up_pool, route_claim_manager=None):
+    def __init__(
+        self,
+        players,
+        board,
+        transport_deck,
+        ticket_deck,
+        face_up_pool,
+        route_claim_manager=None,
+        ticket_market=None
+    ):
         super().__init__()
         self.players = players
         self.board = board
@@ -55,6 +65,11 @@ class TurnManager(Subject):
             self.route_claim_manager = RouteClaimManager()
         else:
             self.route_claim_manager = route_claim_manager
+
+        if ticket_market is None:
+            self.ticket_market = DestinationTicketMarket()
+        else:
+            self.ticket_market = ticket_market
 
     def get_current_player(self):
         return self.players[self.current_player_index]
@@ -249,7 +264,7 @@ class TurnManager(Subject):
             return True, "Face-up card drawn."
     
     def draw_destination_tickets(self):
-        """Draws two destination tickets for the player to choose from."""
+        """Draws visible destination tickets for the player to choose from."""
         # Stop action if the game is already over.
         if self.end_game_tracker.game_over():
             return False, "The game is over."
@@ -261,8 +276,11 @@ class TurnManager(Subject):
         if self.actions_taken:
             return False, "Turn over or another action taken."
         
-        # Draw up to two tickets from the deck.
-        tickets = self.ticket_deck.draw_two()
+        # Fill the market if it has no visible tickets.
+        if not self.ticket_market.visible():
+            self.ticket_market.refill(self.ticket_deck)
+
+        tickets = self.ticket_market.visible()
         if not tickets:
             return False, "No tickets left."
             
@@ -280,14 +298,17 @@ class TurnManager(Subject):
         if not self.actions_taken or self.actions_taken[-1][0] != "destination_tickets_drawn":
             return False, "You must draw tickets first."
             
-        # Player is forced to keep at least one ticket.
-        if len(kept_tickets) < 1:
-            return False, "You must keep at least one ticket."
-            
         current_player = self.get_current_player()
-        current_player.take_tickets(kept_tickets)
-        self.ticket_deck.return_tickets(returned_tickets)
+        ok, message = self.ticket_market.choose_tickets(
+            current_player,
+            kept_tickets,
+            returned_tickets,
+            self.ticket_deck
+        )
+
+        if not ok:
+            return False, message
         
         self.actions_taken.append(("destination_tickets_kept", kept_tickets))
         self.notify()
-        return True, "Tickets kept."
+        return True, message
