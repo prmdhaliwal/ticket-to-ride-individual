@@ -7,7 +7,7 @@ class SetupWindow(tk.Tk):
     def __init__(self, map_catalog=None):
         super().__init__()
         self.title("Game Setup")
-        self.geometry("360x430")
+        self.resizable(False, False)
         self.players = []
         self.selected_map = None
         self.current_map_definition = None
@@ -55,10 +55,30 @@ class SetupWindow(tk.Tk):
         
         ttk.Button(self, text="Start Game", command=self.start_game, style="Accent.TButton").pack(pady=20)
         
-        # Center the window
-        self.eval('tk::PlaceWindow . center')
-
         sv_ttk.set_theme("light")
+        self.fit_window()
+
+    def fit_window(self):
+        self.update_idletasks()
+
+        width = self.winfo_reqwidth()
+        height = self.winfo_reqheight()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        if width < 360:
+            width = 360
+
+        if width > screen_width - 80:
+            width = screen_width - 80
+
+        if height > screen_height - 100:
+            height = screen_height - 100
+
+        x = int((screen_width - width) / 2)
+        y = int((screen_height - height) / 2)
+        self.geometry(f"{width}x{height}+{x}+{y}")
+        self.resizable(False, False)
 
     def handle_map_change(self, event=None):
         self.update_player_limits()
@@ -140,6 +160,8 @@ class SetupWindow(tk.Tk):
             entry = ttk.Entry(frame)
             entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 20))
             self.player_entries.append(entry)
+
+        self.fit_window()
 
     def start_game(self):
         map_definition = self.load_selected_map_definition()

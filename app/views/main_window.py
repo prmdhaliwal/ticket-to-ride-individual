@@ -17,7 +17,7 @@ class MainWindow(Observer):
         self.selected_pool_index = None
         
         self.root.title(f"Ticket to Ride - {self.controller.map_name()}")
-        self.root.geometry("1280x800")
+        self.root.resizable(False, False)
         
         self.map_background_loaded = False
         self.map_background_image = None
@@ -25,24 +25,26 @@ class MainWindow(Observer):
         self.setup_ui()
         self.show_starting_ticket_choices()
         self.update()
+        self.fit_main_window(True)
 
     def setup_ui(self):
         self.status_label = ttk.Label(self.root, text="Loading game...", font=("Arial", 16))
         self.status_label.pack(pady=10)
         
-        main_paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
-        main_paned.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main_frame = ttk.Frame(self.root)
+        main_frame.pack(fill=tk.BOTH, expand=False, padx=20, pady=20)
         
-        left_frame = ttk.LabelFrame(main_paned, text="Routes", padding=10)
-        main_paned.add(left_frame, weight=2)
+        left_frame = ttk.LabelFrame(main_frame, text="Routes", padding=10)
+        left_frame.grid(row=0, column=0, sticky=tk.N, padx=(0, 12))
 
         self.route_canvas = tk.Canvas(
             left_frame,
+            width=700,
             height=430,
             background="#f7f3e8",
             highlightthickness=0
         )
-        self.route_canvas.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        self.route_canvas.pack(fill=tk.X, pady=(0, 10))
         self.route_canvas.tag_bind("route", "<Button-1>", self.handle_canvas_route_click)
         self.route_canvas.bind("<Configure>", self.handle_map_resize)
         
@@ -53,13 +55,14 @@ class MainWindow(Observer):
         self.claim_btn = ttk.Button(left_frame, text="Claim Route", command=self.claim_route, style="Accent.TButton")
         self.claim_btn.pack(pady=5)
         
-        mid_frame = ttk.LabelFrame(main_paned, text="Actions & Cards", padding=10)
-        main_paned.add(mid_frame, weight=1)
+        mid_frame = ttk.LabelFrame(main_frame, text="Actions & Cards", padding=10)
+        mid_frame.grid(row=0, column=1, sticky=tk.N, padx=(0, 12))
         
         ttk.Label(mid_frame, text="Face-Up Cards").pack(anchor=tk.W, pady=(0, 5))
         self.pool_canvas = tk.Canvas(
             mid_frame,
-            height=135,
+            width=260,
+            height=92,
             background="#f7f1df",
             highlightthickness=0
         )
@@ -79,13 +82,14 @@ class MainWindow(Observer):
         self.end_turn_btn = ttk.Button(mid_frame, text="End Turn", command=self.handle_end_turn, style="Accent.TButton")
         self.end_turn_btn.pack(pady=(20, 5), fill=tk.X)
         
-        right_frame = ttk.LabelFrame(main_paned, text="Player Status", padding=10)
-        main_paned.add(right_frame, weight=1)
+        right_frame = ttk.LabelFrame(main_frame, text="Player Status", padding=10)
+        right_frame.grid(row=0, column=2, sticky=tk.N)
 
         ttk.Label(right_frame, text="Cards").pack(anchor=tk.W)
         self.card_canvas = tk.Canvas(
             right_frame,
-            height=105,
+            width=260,
+            height=92,
             background="#f7f1df",
             highlightthickness=0
         )
@@ -93,14 +97,132 @@ class MainWindow(Observer):
         self.card_canvas.bind("<Configure>", self.handle_card_resize)
 
         ttk.Label(right_frame, text="Tickets").pack(anchor=tk.W, pady=(10, 4))
+        ticket_frame = ttk.Frame(right_frame)
+        ticket_frame.pack(fill=tk.X)
+
         self.ticket_canvas = tk.Canvas(
-            right_frame,
-            height=330,
+            ticket_frame,
+            width=260,
+            height=88,
             background="#f7f1df",
             highlightthickness=0
         )
-        self.ticket_canvas.pack(fill=tk.BOTH, expand=True)
+        self.ticket_canvas.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.ticket_scrollbar = ttk.Scrollbar(
+            ticket_frame,
+            orient=tk.VERTICAL,
+            command=self.ticket_canvas.yview
+        )
+        self.ticket_canvas.config(yscrollcommand=self.ticket_scrollbar.set)
         self.ticket_canvas.bind("<Configure>", self.handle_ticket_resize)
+
+    def fit_main_window(self, center_window=False):
+        self.root.update_idletasks()
+
+        width = self.root.winfo_reqwidth()
+        height = self.root.winfo_reqheight()
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        max_width = screen_width - 80
+        max_height = screen_height - 100
+
+        if width > max_width:
+            width = max_width
+
+        if height > max_height:
+            height = max_height
+
+        if center_window:
+            x = int((screen_width - width) / 2)
+            y = int((screen_height - height) / 2)
+        else:
+            x = self.root.winfo_x()
+            y = self.root.winfo_y()
+
+            if x + width > screen_width:
+                x = screen_width - width
+
+            if y + height > screen_height:
+                y = screen_height - height
+
+            if x < 0:
+                x = 0
+
+            if y < 0:
+                y = 0
+
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
+        self.root.resizable(False, False)
+
+    def canvas_height_for_items(self, item_count, width, box_width, box_height, gap, maximum_height):
+        if item_count <= 0:
+            return box_height + gap * 2
+
+        columns = max(1, int((width - gap) / (box_width + gap)))
+        rows = math.ceil(item_count / columns)
+        height = rows * box_height + (rows + 1) * gap
+
+        if height > maximum_height:
+            return maximum_height
+
+        return height
+
+    def fit_popup_window(self, top, minimum_width=360):
+        top.update_idletasks()
+
+        width = top.winfo_reqwidth()
+        height = top.winfo_reqheight()
+        screen_width = top.winfo_screenwidth()
+        screen_height = top.winfo_screenheight()
+
+        if width < minimum_width:
+            width = minimum_width
+
+        if width > screen_width - 80:
+            width = screen_width - 80
+
+        if height > screen_height - 100:
+            height = screen_height - 100
+
+        x = int((screen_width - width) / 2)
+        y = int((screen_height - height) / 2)
+        top.geometry(f"{width}x{height}+{x}+{y}")
+        top.resizable(False, False)
+
+    def add_ticket_checkbuttons(self, top, tickets, ticket_vars):
+        if len(tickets) <= 8:
+            check_frame = ttk.Frame(top)
+            check_frame.pack(fill=tk.BOTH, expand=False, padx=20, pady=5)
+            checkbox_parent = check_frame
+        else:
+            check_frame = ttk.Frame(top)
+            check_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+
+            canvas = tk.Canvas(check_frame, height=220, highlightthickness=0)
+            scrollbar = ttk.Scrollbar(check_frame, orient=tk.VERTICAL, command=canvas.yview)
+            checkbox_parent = ttk.Frame(canvas)
+            canvas_window = canvas.create_window((0, 0), window=checkbox_parent, anchor=tk.NW)
+
+            canvas.config(yscrollcommand=scrollbar.set)
+            canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            checkbox_parent.bind(
+                "<Configure>",
+                lambda event: canvas.config(scrollregion=canvas.bbox("all"))
+            )
+            canvas.bind(
+                "<Configure>",
+                lambda event: canvas.itemconfig(canvas_window, width=event.width)
+            )
+
+        for ticket in tickets:
+            var = tk.BooleanVar(value=True)
+            text = f"{ticket.from_city} to {ticket.to_city} ({ticket.points})"
+            cb = ttk.Checkbutton(checkbox_parent, text=text, variable=var)
+            cb.pack(anchor=tk.W, pady=2)
+            ticket_vars.append(var)
 
     def handle_map_resize(self, event):
         self.draw_map()
@@ -314,7 +436,11 @@ class MainWindow(Observer):
 
         tag = "route_index_" + str(index)
 
-        for point in route.segment_points:
+        required_locomotives = 0
+        if getattr(route, "route_type", RouteType.STANDARD) == RouteType.FERRY:
+            required_locomotives = getattr(route, "required_locomotives", 0)
+
+        for segment_index, point in enumerate(route.segment_points):
             x = point.get("x")
             y = point.get("y")
             rotation = point.get("rotation")
@@ -334,6 +460,8 @@ class MainWindow(Observer):
                     outline,
                     tag
                 )
+                if segment_index < required_locomotives:
+                    self.draw_ferry_icon(canvas_x, canvas_y, tag)
 
     def draw_route_fallback_segments(self, route, index, selected_index, canvas_points):
         colour = self.route_display_colour(route)
@@ -367,6 +495,8 @@ class MainWindow(Observer):
                 outline,
                 tag
             )
+            if self.should_draw_ferry_icon(route, segment_index):
+                self.draw_ferry_icon(x, y, tag)
 
     def draw_segment_shape(self, x, y, rotation, width, height, colour, outline, tag):
         half_width = width / 2
@@ -390,6 +520,33 @@ class MainWindow(Observer):
             fill=colour,
             outline=outline,
             width=2,
+            tags=("route", tag)
+        )
+
+    def should_draw_ferry_icon(self, route, segment_index):
+        if getattr(route, "route_type", RouteType.STANDARD) != RouteType.FERRY:
+            return False
+
+        return segment_index < getattr(route, "required_locomotives", 0)
+
+    def draw_ferry_icon(self, x, y, tag):
+        radius = 8
+        self.route_canvas.create_oval(
+            x - radius,
+            y - radius,
+            x + radius,
+            y + radius,
+            fill="#ffffff",
+            outline="#111111",
+            width=2,
+            tags=("route", tag)
+        )
+        self.route_canvas.create_text(
+            x,
+            y,
+            text="B",
+            fill="#111111",
+            font=("Arial", 8, "bold"),
             tags=("route", tag)
         )
 
@@ -479,6 +636,14 @@ class MainWindow(Observer):
 
         self.current_face_up_cards = cards
         self.pool_canvas.delete("all")
+        width = self.pool_canvas.winfo_width()
+
+        if width < 160:
+            width = 260
+
+        self.pool_canvas.config(
+            height=self.canvas_height_for_items(len(cards), width, 96, 34, 8, 178)
+        )
 
         if self.selected_pool_index is not None:
             if self.selected_pool_index >= len(cards):
@@ -493,10 +658,6 @@ class MainWindow(Observer):
                 fill="#5d5145"
             )
             return
-
-        width = self.pool_canvas.winfo_width()
-        if width < 160:
-            width = 260
 
         x = 8
         y = 8
@@ -573,6 +734,14 @@ class MainWindow(Observer):
 
             card_counts[colour] += 1
 
+        width = self.card_canvas.winfo_width()
+        if width < 160:
+            width = 260
+
+        self.card_canvas.config(
+            height=self.canvas_height_for_items(len(card_counts), width, 82, 34, 8, 220)
+        )
+
         if not card_counts:
             self.card_canvas.create_text(
                 12,
@@ -582,10 +751,6 @@ class MainWindow(Observer):
                 fill="#5d5145"
             )
             return
-
-        width = self.card_canvas.winfo_width()
-        if width < 160:
-            width = 300
 
         colour_order = [
             CardColor.BLUE,
@@ -676,7 +841,34 @@ class MainWindow(Observer):
 
         width = self.ticket_canvas.winfo_width()
         if width < 160:
-            width = 300
+            width = 260
+
+        card_height = 72
+        gap = 8
+        content_height = len(tickets) * (card_height + gap) + gap
+
+        if not tickets:
+            content_height = card_height + gap * 2
+
+        max_height = self.root.winfo_screenheight() - 470
+        if max_height < 120:
+            max_height = 120
+
+        if max_height > 330:
+            max_height = 330
+
+        canvas_height = content_height
+        if canvas_height > max_height:
+            canvas_height = max_height
+
+        self.ticket_canvas.config(height=canvas_height)
+
+        if content_height > canvas_height:
+            if not self.ticket_scrollbar.winfo_ismapped():
+                self.ticket_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        else:
+            if self.ticket_scrollbar.winfo_ismapped():
+                self.ticket_scrollbar.pack_forget()
 
         if not tickets:
             self.ticket_canvas.create_text(
@@ -686,13 +878,13 @@ class MainWindow(Observer):
                 text="No tickets",
                 fill="#5d5145"
             )
+            self.ticket_canvas.config(scrollregion=(0, 0, width, content_height))
             return
 
         card_width = width - 20
         if card_width > 300:
             card_width = 300
 
-        card_height = 72
         y = 8
 
         for ticket in tickets:
@@ -829,22 +1021,15 @@ class MainWindow(Observer):
         top.protocol("WM_DELETE_WINDOW", lambda: None)
         top.transient(self.root)
         top.grab_set()
+        top.resizable(False, False)
 
         ttk.Label(
             top,
             text=f"{player.name}, choose starting tickets to keep:"
         ).pack(pady=(15, 10), padx=20)
 
-        check_frame = ttk.Frame(top)
-        check_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
-
         ticket_vars = []
-        for ticket in tickets:
-            var = tk.BooleanVar(value=True)
-            text = f"{ticket.from_city} to {ticket.to_city} ({ticket.points})"
-            cb = ttk.Checkbutton(check_frame, text=text, variable=var)
-            cb.pack(anchor=tk.W, pady=2)
-            ticket_vars.append(var)
+        self.add_ticket_checkbuttons(top, tickets, ticket_vars)
 
         def confirm():
             kept = []
@@ -875,6 +1060,7 @@ class MainWindow(Observer):
         ).pack(pady=(15, 20), padx=20)
 
         sv_ttk.set_theme("light")
+        self.fit_popup_window(top)
 
         self.root.wait_window(top)
 
@@ -882,26 +1068,17 @@ class MainWindow(Observer):
         top = tk.Toplevel(self.root)
         top.title("Ticket Market")
         top.protocol("WM_DELETE_WINDOW", lambda: None) # Disable closing window
+        top.transient(self.root)
+        top.grab_set()
+        top.resizable(False, False)
         
         ttk.Label(
             top,
             text="Choose visible market tickets to keep:"
         ).pack(pady=(15, 10), padx=20)
         
-        check_frame = ttk.Frame(top)
-        check_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
-        
         ticket_vars = []
-        for ticket in tickets:
-            var = tk.BooleanVar(value=True)
-            text = f"{ticket.from_city} to {ticket.to_city} ({ticket.points})"
-            cb = ttk.Checkbutton(
-                check_frame,
-                text=text,
-                variable=var
-            )
-            cb.pack(anchor=tk.W, pady=2)
-            ticket_vars.append(var)
+        self.add_ticket_checkbuttons(top, tickets, ticket_vars)
             
         def confirm():
             kept = []
@@ -930,12 +1107,14 @@ class MainWindow(Observer):
             style="Accent.TButton"
         ).pack(pady=(15, 20), padx=20)
 
+        self.fit_popup_window(top)
+
     def show_game_over_popup(self, winners, scores):
         top = tk.Toplevel(self.root)
         top.title("Game Over!")
-        top.geometry("450x400")
         top.transient(self.root)
         top.grab_set()
+        top.resizable(False, False)
 
         winner_names = ", ".join(w.name for w in winners)
 
@@ -978,6 +1157,8 @@ class MainWindow(Observer):
             command=self.root.destroy,
             style="Accent.TButton"
         ).pack(pady=30)
+
+        self.fit_popup_window(top, 450)
 
     def update(self):
         current_player = self.controller.current_player()
