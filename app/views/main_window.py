@@ -39,8 +39,8 @@ class MainWindow(Observer):
 
         self.route_canvas = tk.Canvas(
             left_frame,
-            width=700,
-            height=430,
+            width=900,
+            height=560,
             background="#f7f3e8",
             highlightthickness=0
         )
@@ -355,10 +355,10 @@ class MainWindow(Observer):
         height = self.route_canvas.winfo_height()
 
         if width < 100:
-            width = 700
+            width = 900
 
         if height < 100:
-            height = 430
+            height = 560
 
         padding = 40
         span_x = bounds["max_x"] - bounds["min_x"]
@@ -426,12 +426,12 @@ class MainWindow(Observer):
     def draw_route_segments(self, route, index, selected_index, bounds):
         colour = self.route_display_colour(route)
         outline = "#4a4037"
-        segment_width = 26
-        segment_height = 11
+        segment_width = 34
+        segment_height = 15
 
         if index == selected_index:
-            segment_width = 30
-            segment_height = 13
+            segment_width = 38
+            segment_height = 17
             outline = "#111111"
 
         tag = "route_index_" + str(index)
@@ -466,12 +466,12 @@ class MainWindow(Observer):
     def draw_route_fallback_segments(self, route, index, selected_index, canvas_points):
         colour = self.route_display_colour(route)
         outline = "#4a4037"
-        segment_width = 26
-        segment_height = 11
+        segment_width = 34
+        segment_height = 15
 
         if index == selected_index:
-            segment_width = 30
-            segment_height = 13
+            segment_width = 38
+            segment_height = 17
             outline = "#111111"
 
         tag = "route_index_" + str(index)
