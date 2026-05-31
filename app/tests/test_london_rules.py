@@ -694,6 +694,50 @@ class LondonRulesTest(unittest.TestCase):
         self.assertEqual(5, len(transport_deck.discard))
         self.assertEqual(2, len(route.placed_trains))
 
+    def test_claim_ferry_route_rejects_without_enough_bus_pieces(self):
+        map_definition = self.make_route_map()
+        map_definition.add_city("A")
+        map_definition.add_city("B")
+        map_definition.add_route(
+            "A",
+            "B",
+            CardColor.BLUE,
+            3,
+            route_type=RouteType.FERRY,
+            required_locomotives=1
+        )
+
+        board = BoardMap(map_definition)
+        player = Player("Alice", trains_left=0)
+        other_player = Player("Bob")
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.BLUE))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+        player.take_train_card(ColouredCarCard(CardColor.GREEN))
+
+        transport_deck = TrainCarCardDeck([])
+        ticket_deck = DestinationTicketDeck([])
+        face_up_pool = FaceUpPool()
+        turn_manager = TurnManager(
+            [player, other_player],
+            board,
+            transport_deck,
+            ticket_deck,
+            face_up_pool
+        )
+        route = board.routes[0]
+
+        ok, message = turn_manager.claim_route(route)
+
+        self.assertFalse(ok)
+        self.assertEqual("Not enough bus pieces.", message)
+        self.assertIsNone(route.owner)
+        self.assertEqual(0, player.trains_left)
+        self.assertEqual(6, len(player.train_cards))
+        self.assertEqual(0, len(transport_deck.discard))
+
     def test_claim_ferry_route_rejects_without_substitute_cards(self):
         map_definition = self.make_route_map()
         map_definition.add_city("A")
@@ -730,7 +774,7 @@ class LondonRulesTest(unittest.TestCase):
         ok, message = turn_manager.claim_route(route)
 
         self.assertFalse(ok)
-        self.assertEqual("Not enough matching transportation cards.", message)
+        self.assertEqual("Not enough bus cards or substitute cards.", message)
         self.assertIsNone(route.owner)
         self.assertEqual(17, player.trains_left)
         self.assertEqual(4, len(player.train_cards))

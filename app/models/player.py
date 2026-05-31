@@ -8,7 +8,7 @@ class Player:
         self.name = name
         self.train_cards = []
         self.trains_left = trains_left
-        self.score = 0  # Added this so your teammate's scoring logic works
+        self.score = 0
         self.destination_tickets = []
         self.starting_ticket_choices = []
         self.marker = ScoringMarker()
