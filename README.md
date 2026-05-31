@@ -14,7 +14,7 @@ This repository contains the Sprint 3 Python/Tkinter prototype for Ticket to Rid
 
 The executable is built for Windows.
 
-## Run the Executable
+## Run from source
 
 Open PowerShell in the repository root, then run:
 
