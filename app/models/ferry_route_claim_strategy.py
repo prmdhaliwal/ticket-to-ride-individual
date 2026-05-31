@@ -19,7 +19,7 @@ class FerryRouteClaimStrategy(RouteClaimStrategy):
             extra_cards = self.choose_extra_cards(player, cards_to_use, extra_cards_needed)
 
             if len(extra_cards) < extra_cards_needed:
-                return False, "Not enough matching transportation cards.", []
+                return False, "Not enough bus cards or substitute cards.", []
 
             for card in extra_cards:
                 cards_to_use.append(card)

@@ -1,0 +1,270 @@
+{
+    "map_name": "Sydney",
+    "min_players": 2,
+    "max_players": 5,
+    "initial_train_pieces": 20,
+    "map_size": {
+        "x": 900,
+        "y": 600
+    },
+    "route_scores": {
+        "1": 1,
+        "2": 2,
+        "3": 4,
+        "4": 7,
+        "5": 10
+    },
+    "tickets": [
+        {
+            "from_city_id": "opera_house",
+            "to_city_id": "parramatta",
+            "points": 8
+        },
+        {
+            "from_city_id": "manly",
+            "to_city_id": "central",
+            "points": 6
+        },
+        {
+            "from_city_id": "circular_quay",
+            "to_city_id": "bondi_junction",
+            "points": 5
+        },
+        {
+            "from_city_id": "the_rocks",
+            "to_city_id": "newtown",
+            "points": 5
+        },
+        {
+            "from_city_id": "darling_harbour",
+            "to_city_id": "manly",
+            "points": 6
+        },
+        {
+            "from_city_id": "town_hall",
+            "to_city_id": "parramatta",
+            "points": 7
+        },
+        {
+            "from_city_id": "bondi_junction",
+            "to_city_id": "newtown",
+            "points": 4
+        },
+        {
+            "from_city_id": "opera_house",
+            "to_city_id": "darling_harbour",
+            "points": 3
+        },
+        {
+            "from_city_id": "central",
+            "to_city_id": "circular_quay",
+            "points": 4
+        },
+        {
+            "from_city_id": "manly",
+            "to_city_id": "parramatta",
+            "points": 10
+        },
+        {
+            "from_city_id": "the_rocks",
+            "to_city_id": "bondi_junction",
+            "points": 6
+        },
+        {
+            "from_city_id": "newtown",
+            "to_city_id": "opera_house",
+            "points": 7
+        },
+        {
+            "from_city_id": "central",
+            "to_city_id": "darling_harbour",
+            "points": 2
+        },
+        {
+            "from_city_id": "town_hall",
+            "to_city_id": "manly",
+            "points": 5
+        },
+        {
+            "from_city_id": "bondi_junction",
+            "to_city_id": "parramatta",
+            "points": 8
+        }
+    ],
+    "cities": [
+        {
+            "id": "circular_quay",
+            "display_name": "Circular Quay",
+            "position": {
+                "x": 420,
+                "y": 150
+            }
+        },
+        {
+            "id": "opera_house",
+            "display_name": "Opera House",
+            "position": {
+                "x": 520,
+                "y": 120
+            }
+        },
+        {
+            "id": "the_rocks",
+            "display_name": "The Rocks",
+            "position": {
+                "x": 330,
+                "y": 130
+            }
+        },
+        {
+            "id": "darling_harbour",
+            "display_name": "Darling Harbour",
+            "position": {
+                "x": 300,
+                "y": 260
+            }
+        },
+        {
+            "id": "town_hall",
+            "display_name": "Town Hall",
+            "position": {
+                "x": 420,
+                "y": 290
+            }
+        },
+        {
+            "id": "central",
+            "display_name": "Central",
+            "position": {
+                "x": 440,
+                "y": 410
+            }
+        },
+        {
+            "id": "newtown",
+            "display_name": "Newtown",
+            "position": {
+                "x": 250,
+                "y": 450
+            }
+        },
+        {
+            "id": "parramatta",
+            "display_name": "Parramatta",
+            "position": {
+                "x": 90,
+                "y": 360
+            }
+        },
+        {
+            "id": "bondi_junction",
+            "display_name": "Bondi Junction",
+            "position": {
+                "x": 690,
+                "y": 360
+            }
+        },
+        {
+            "id": "manly",
+            "display_name": "Manly",
+            "position": {
+                "x": 720,
+                "y": 90
+            }
+        }
+    ],
+    "routes": [
+        {
+            "from_city_id": "circular_quay",
+            "to_city_id": "opera_house",
+            "cart_type": "NONE",
+            "route_length": 1
+        },
+        {
+            "from_city_id": "circular_quay",
+            "to_city_id": "the_rocks",
+            "cart_type": "BLUE",
+            "route_length": 1
+        },
+        {
+            "from_city_id": "the_rocks",
+            "to_city_id": "darling_harbour",
+            "cart_type": "ORANGE",
+            "route_length": 2
+        },
+        {
+            "from_city_id": "darling_harbour",
+            "to_city_id": "town_hall",
+            "cart_type": "YELLOW",
+            "route_length": 2
+        },
+        {
+            "from_city_id": "town_hall",
+            "to_city_id": "central",
+            "cart_type": "BLACK",
+            "route_length": 1
+        },
+        {
+            "from_city_id": "central",
+            "to_city_id": "newtown",
+            "cart_type": "GREEN",
+            "route_length": 2
+        },
+        {
+            "from_city_id": "town_hall",
+            "to_city_id": "bondi_junction",
+            "cart_type": "PURPLE",
+            "route_length": 3
+        },
+        {
+            "from_city_id": "circular_quay",
+            "to_city_id": "manly",
+            "cart_type": "NONE",
+            "route_length": 3,
+            "route_type": "FERRY",
+            "required_locomotives": 2
+        },
+        {
+            "from_city_id": "manly",
+            "to_city_id": "bondi_junction",
+            "cart_type": "BLUE",
+            "route_length": 4
+        },
+        {
+            "from_city_id": "newtown",
+            "to_city_id": "parramatta",
+            "cart_type": "ORANGE",
+            "route_length": 4
+        },
+        {
+            "from_city_id": "central",
+            "to_city_id": "parramatta",
+            "cart_type": "BLACK",
+            "route_length": 5
+        },
+        {
+            "from_city_id": "darling_harbour",
+            "to_city_id": "circular_quay",
+            "cart_type": "GREEN",
+            "route_length": 2
+        },
+        {
+            "from_city_id": "the_rocks",
+            "to_city_id": "town_hall",
+            "cart_type": "PURPLE",
+            "route_length": 2
+        },
+        {
+            "from_city_id": "bondi_junction",
+            "to_city_id": "central",
+            "cart_type": "YELLOW",
+            "route_length": 3
+        },
+        {
+            "from_city_id": "newtown",
+            "to_city_id": "darling_harbour",
+            "cart_type": "NONE",
+            "route_length": 3
+        }
+    ]
+}
