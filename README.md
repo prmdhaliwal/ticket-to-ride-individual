@@ -1,69 +1,59 @@
-# FIT3077 Ticket to Ride Prototype
+# Ticket to Ride: London - Individual Extensions
 
-This repository contains the Sprint 3 Python/Tkinter prototype for Ticket to Ride: London.
+I developed this individual final sprint during FIT3077 at Monash University in 2026, building on the [Ticket to Ride application I created with my team](https://github.com/prmdhaliwal/ticket-to-ride-group). My focus was making the architecture easier to extend, adding new game mechanics and testing the rules behind them.
 
-## Repository Organisation
+## What I Added
 
-- `app/` contains the runnable game source code, tests, and map assets.
-- `Sprint 1/` contains Sprint 1 submission artifacts.
-- `Sprint 2/` contains Sprint 2 submission artifacts only.
-- `Sprint 3/` contains Sprint 3 submission artifacts and the PyInstaller build spec.
-- `prototypes/` contains earlier individual prototype files.
+- **Clearer responsibilities:** I consolidated game setup and extracted route-claim coordination and payment rules into dedicated classes.
+- **Ferry routes:** I introduced standard and ferry route-claim strategies, including the required-card and substitute-card rules.
+- **Visible ticket market:** I added a three-ticket market, ticket selection and replenishment, and the corresponding interface.
+- **Configurable maps:** I moved map loading into a `MapCatalog`, with JSON-driven locations, routes, tickets, scores and player limits. I included London and a small Sydney test map.
+- **UI and rule checks:** I refined setup and board layouts and added tests for route claims, map loading, card drawing and ticket selection.
 
-## Target Platform
+I committed this work under `pdha0007`. Earlier commits and the prototypes retain my teammates' contributions to the shared foundation.
 
-The executable is built for Windows.
+## Architecture
 
-## Run from source
+I kept the models, controllers and Tkinter views separate. `GameSetup` creates the initial state; `TurnManager` coordinates turns; `RouteClaimManager` delegates route payment rules to standard or ferry strategies. `MapCatalog` loads map configuration without putting file-loading responsibilities in `MapDefinition`.
 
-Open PowerShell in the repository root, then run:
-
-```powershell
-python -m pip install sv-ttk
-python app\main.py
+```text
+app/
+  controllers/   Game setup and action coordination
+  models/        Game state, route strategies, maps and scoring
+  views/         Tkinter setup and game windows
+  assets/maps/   London and Sydney JSON configurations
+  tests/         Automated rule and map-loading checks
 ```
 
-The setup window opens first. Enter the player names, then start the game.
+## Run Locally
 
-## Build the Sprint 3 Executable
-
-The Sprint 3 executable is built from the tracked PyInstaller spec file at `Sprint 3/TicketToRideLondon.spec`. This spec packages the game source, Tkinter UI code, theme files, and map assets.
-
-Open PowerShell in the repository root, then run:
+I use Python with Tkinter and `sv-ttk`. From PowerShell on Windows:
 
 ```powershell
-python -m pip install pyinstaller sv-ttk
-python -m PyInstaller "Sprint 3\TicketToRideLondon.spec" --noconfirm --distpath app\dist --workpath app\build
+git clone https://github.com/prmdhaliwal/ticket-to-ride-individual.git
+cd ticket-to-ride-individual
+python -m venv .venv
+./.venv/Scripts/python.exe -m pip install -r requirements.txt
+./.venv/Scripts/python.exe app/main.py
 ```
 
-After the build finishes, the executable is created at:
+Choose a map and enter the player names in the setup window. The source does not require an account, database or external service.
+
+## Tests
 
 ```powershell
-app\dist\TicketToRideLondon.exe
+./.venv/Scripts/python.exe -B -m unittest discover -s app/tests -v
 ```
 
-## Run the Sprint 3 Executable
+All 38 tests pass at this revision. They cover route-claim validation, ferry payment rules, the ticket market, map loading, player limits and card-drawing behaviour. These are backend checks, not a complete GUI playthrough.
 
-From the repository root:
+## Windows Packaging
+
+I kept the PyInstaller specification in [`Sprint 3/TicketToRideLondon.spec`](Sprint%203/TicketToRideLondon.spec). To build from the repository root:
 
 ```powershell
-cd app\dist
-.\TicketToRideLondon.exe
+./.venv/Scripts/python.exe -m pip install pyinstaller
+./.venv/Scripts/python.exe -m PyInstaller "Sprint 3/TicketToRideLondon.spec" --noconfirm --distpath app/dist --workpath app/build
 ```
 
-## If the Build Command Fails
-
-Make sure Python and PyInstaller are available on the build machine:
-
-```powershell
-python --version
-python -m PyInstaller --version
-```
-
-If PyInstaller is missing, install it with:
-
-```powershell
-python -m pip install pyinstaller
-```
-
-Then run the Sprint 3 build command again.
+The configured output is `app/dist/TicketToRideLondon.exe`. A packaged executable is not included in this repository.
